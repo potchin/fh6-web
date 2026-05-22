@@ -4,6 +4,8 @@ Multi-user Forza Horizon 6 telemetry dashboard, accessible from any browser on y
 
 Receives UDP telemetry from one or more players simultaneously, identifies each by source IP, and streams live data to all connected browsers over WebSocket. No install required on the viewer — just open a URL.
 
+Full disclosure: this is mostly vibecoded. It's designed to be a self-hosted private instance handling local data. I've put it together for fun and to mess around with. Props to [fh6-tel](https://github.com/TheBanHammer/fh6-tel) by BanHammer for the original idea.
+
 ![desktop](screenshot.png)
 ![mobile](pwa-screenshot.png)
 

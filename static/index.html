@@ -105,6 +105,43 @@
                 color: #f59e0b;
             }
 
+            /* ── Tab navigation ──────────────────────────────────────────────────── */
+            .tab-nav {
+                display: flex;
+                gap: 2px;
+                background: var(--bg);
+                border-radius: 6px;
+                padding: 3px;
+            }
+            .tab-btn {
+                background: transparent;
+                border: none;
+                color: var(--tx-dim);
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                padding: 5px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                transition:
+                    background 0.15s,
+                    color 0.15s;
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    "Segoe UI",
+                    sans-serif;
+            }
+            .tab-btn:hover {
+                background: var(--bg-elevated);
+                color: var(--tx);
+            }
+            .tab-btn.active {
+                background: var(--bg-elevated);
+                color: var(--ac);
+            }
+
             /* ── Main layout ─────────────────────────────────────────────────────── */
             #main-layout {
                 display: flex;
@@ -228,6 +265,328 @@
                 text-align: center;
                 padding: 32px 16px;
                 letter-spacing: 0.04em;
+            }
+
+            /* ── Dashboard view ────────────────────────────────────────────────────── */
+            body[data-tab="dashboard"] #main-layout {
+                display: none !important;
+            }
+            #dashboard-view {
+                display: none;
+                flex-direction: column;
+                height: calc(100vh - var(--header-h));
+                overflow: hidden;
+                background: var(--bg);
+            }
+            body[data-tab="dashboard"] #dashboard-view {
+                display: flex;
+            }
+
+            /* picker */
+            #dash-picker {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 20px;
+                padding: 24px;
+            }
+            #dash-picker > h2 {
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--tx-dim);
+            }
+            #dash-picker-list {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 14px;
+                justify-content: center;
+            }
+            .dpk-card {
+                background: var(--bg-card);
+                border: 2px solid var(--bd);
+                border-radius: 10px;
+                padding: 18px 24px;
+                cursor: pointer;
+                min-width: 200px;
+                max-width: 320px;
+                flex: 1 1 200px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                text-align: left;
+                transition:
+                    background 0.15s,
+                    transform 0.1s;
+            }
+            .dpk-card:hover {
+                background: var(--bg-elevated);
+                transform: translateY(-2px);
+            }
+            .dpk-name {
+                font-size: 15px;
+                font-weight: 700;
+                color: var(--tx);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .dpk-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+            .dpk-car {
+                font-size: 11px;
+                color: var(--tx-dim);
+            }
+            .dpk-stats {
+                display: flex;
+                gap: 18px;
+                font-size: 11px;
+                color: var(--tx-dim);
+            }
+            .dpk-stat-val {
+                font-family: "Courier New", monospace;
+                font-size: 16px;
+                font-weight: 700;
+                color: var(--tx);
+                line-height: 1.1;
+            }
+
+            /* telemetry panel */
+            #dash-telem {
+                display: none;
+                flex-direction: column;
+                flex: 1;
+                min-height: 0;
+            }
+            #dash-hdr {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 0 14px;
+                height: 38px;
+                background: var(--bg-panel);
+                border-bottom: 1px solid var(--bd);
+                flex-shrink: 0;
+                font-size: 12px;
+            }
+            .dh-dot {
+                width: 9px;
+                height: 9px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+            #dh-name {
+                font-weight: 700;
+                color: var(--tx);
+            }
+            #dh-car {
+                color: var(--tx-dim);
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            #dh-pos {
+                background: var(--ac);
+                color: #fff;
+                font-weight: 800;
+                font-size: 11px;
+                padding: 1px 8px;
+                border-radius: 4px;
+                display: none;
+                flex-shrink: 0;
+            }
+            #dh-lap {
+                font-family: "Courier New", monospace;
+                color: var(--tx-dim);
+                flex-shrink: 0;
+            }
+            canvas#dash-rev {
+                width: 100%;
+                height: 26px;
+                display: block;
+                background: #020609;
+                flex-shrink: 0;
+            }
+            #dash-mid {
+                flex: 1;
+                display: flex;
+                align-items: stretch;
+                min-height: 0;
+                border-bottom: 1px solid var(--bd);
+            }
+            #dash-speed {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                border-right: 1px solid var(--bd-subtle);
+                gap: 4px;
+            }
+            #d-spd {
+                font-family: "Courier New", monospace;
+                font-size: clamp(3rem, 9vw, 7rem);
+                font-weight: 900;
+                color: var(--tx);
+                line-height: 1;
+                font-variant-numeric: tabular-nums;
+            }
+            .d-spd-unit {
+                font-size: clamp(0.7rem, 2vw, 1.2rem);
+                font-weight: 700;
+                letter-spacing: 0.12em;
+                color: var(--tx-dim);
+                text-transform: uppercase;
+            }
+            #dash-gear {
+                flex: 1.2;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-right: 1px solid var(--bd-subtle);
+            }
+            #d-gear {
+                font-family: "Courier New", monospace;
+                font-size: clamp(5rem, 18vw, 13rem);
+                font-weight: 900;
+                line-height: 1;
+                color: #fff;
+                text-shadow:
+                    0 0 30px rgba(59, 130, 246, 0.5),
+                    0 0 70px rgba(59, 130, 246, 0.15);
+                transition:
+                    color 0.08s,
+                    text-shadow 0.08s;
+            }
+            #dash-pedals {
+                display: flex;
+                gap: 8px;
+                padding: 14px 18px;
+                flex-shrink: 0;
+            }
+            .dp-col {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+                width: 32px;
+            }
+            .dp-lbl {
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 0.1em;
+                flex-shrink: 0;
+            }
+            .dp-track {
+                flex: 1;
+                width: 100%;
+                background: var(--bg-elevated);
+                border: 1px solid var(--bd);
+                border-radius: 4px;
+                position: relative;
+                overflow: hidden;
+                min-height: 30px;
+            }
+            .dp-fill {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                border-radius: 4px;
+                transition: height 60ms linear;
+            }
+            .dp-pct {
+                font-family: "Courier New", monospace;
+                font-size: 9px;
+                color: var(--tx-dim);
+                flex-shrink: 0;
+            }
+            #dash-bot {
+                display: flex;
+                flex-shrink: 0;
+                height: 160px;
+                border-bottom: 1px solid var(--bd);
+            }
+            #dash-tires {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 5px;
+                padding: 8px;
+                width: 175px;
+                flex-shrink: 0;
+                background: var(--bg-panel);
+                border-right: 1px solid var(--bd);
+            }
+            .dt {
+                background: var(--bg-elevated);
+                border: 1px solid var(--bd);
+                border-radius: 5px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
+                transition:
+                    background 0.25s,
+                    border-color 0.25s;
+            }
+            .dtp {
+                font-size: 9px;
+                font-weight: 800;
+                letter-spacing: 0.1em;
+                opacity: 0.55;
+            }
+            .dtt {
+                font-family: "Courier New", monospace;
+                font-size: 15px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+            }
+            canvas#dash-trace {
+                flex: 1;
+                display: block;
+                background: #020609;
+            }
+            #dash-laps {
+                display: flex;
+                align-items: center;
+                justify-content: space-around;
+                padding: 8px 24px;
+                background: var(--bg-panel);
+                flex-shrink: 0;
+                gap: 20px;
+            }
+            #dash-laps > div {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 1px;
+            }
+            .dl-lbl {
+                font-size: 9px;
+                font-weight: 700;
+                letter-spacing: 0.12em;
+                color: var(--tx-xdim);
+                text-transform: uppercase;
+            }
+            #d-cur,
+            #d-best {
+                font-family: "Courier New", monospace;
+                font-size: clamp(1rem, 3.5vw, 2rem);
+                font-weight: 700;
+                color: var(--tx);
+                font-variant-numeric: tabular-nums;
+            }
+            #d-best {
+                color: #a855f7;
             }
 
             /* ── Player card ─────────────────────────────────────────────────────── */
@@ -598,6 +957,10 @@
         <!-- ── Header ─────────────────────────────────────────────────── -->
         <header id="header">
             <span class="header-title">FH6 <span>Dashboard</span></span>
+            <nav class="tab-nav" id="tab-nav">
+                <button class="tab-btn" data-tab="map">Map</button>
+                <button class="tab-btn" data-tab="dashboard">Dashboard</button>
+            </nav>
             <span class="conn-status disconnected" id="conn-status"
                 >● DISCONNECTED</span
             >
@@ -611,6 +974,101 @@
             <div id="resizer" aria-hidden="true"></div>
             <div id="cards-panel">
                 <p id="empty-state">Waiting for players…</p>
+            </div>
+        </div>
+
+        <!-- ── Dashboard view ──────────────────────────────────────────── -->
+        <div id="dashboard-view">
+            <!-- Player picker -->
+            <div id="dash-picker">
+                <h2>Select Player</h2>
+                <div id="dash-picker-list"></div>
+            </div>
+            <!-- Full-screen telemetry -->
+            <div id="dash-telem">
+                <div id="dash-hdr">
+                    <span class="dh-dot" id="dh-dot"></span>
+                    <span id="dh-name"></span>
+                    <span id="dh-class"></span>
+                    <span id="dh-car"></span>
+                    <span style="flex: 1"></span>
+                    <span id="dh-pos"></span>
+                    <span id="dh-lap"></span>
+                </div>
+                <canvas id="dash-rev"></canvas>
+                <div id="dash-mid">
+                    <div id="dash-speed">
+                        <span id="d-spd">0</span>
+                        <span class="d-spd-unit">mph</span>
+                    </div>
+                    <div id="dash-gear"><span id="d-gear">&mdash;</span></div>
+                    <div id="dash-pedals">
+                        <div class="dp-col">
+                            <span class="dp-lbl" style="color: #22c55e">T</span>
+                            <div class="dp-track">
+                                <div
+                                    class="dp-fill"
+                                    id="dp-t"
+                                    style="background: #22c55e"
+                                ></div>
+                            </div>
+                            <span class="dp-pct" id="dp-tp">0%</span>
+                        </div>
+                        <div class="dp-col">
+                            <span class="dp-lbl" style="color: #ef4444">B</span>
+                            <div class="dp-track">
+                                <div
+                                    class="dp-fill"
+                                    id="dp-b"
+                                    style="background: #ef4444"
+                                ></div>
+                            </div>
+                            <span class="dp-pct" id="dp-bp">0%</span>
+                        </div>
+                        <div class="dp-col">
+                            <span class="dp-lbl" style="color: #6b7280">C</span>
+                            <div class="dp-track">
+                                <div
+                                    class="dp-fill"
+                                    id="dp-c"
+                                    style="background: #6b7280"
+                                ></div>
+                            </div>
+                            <span class="dp-pct" id="dp-cp">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="dash-bot">
+                    <div id="dash-tires">
+                        <div class="dt" id="dt-fl">
+                            <span class="dtp">FL</span
+                            ><span class="dtt">&mdash;&deg;</span>
+                        </div>
+                        <div class="dt" id="dt-fr">
+                            <span class="dtp">FR</span
+                            ><span class="dtt">&mdash;&deg;</span>
+                        </div>
+                        <div class="dt" id="dt-rl">
+                            <span class="dtp">RL</span
+                            ><span class="dtt">&mdash;&deg;</span>
+                        </div>
+                        <div class="dt" id="dt-rr">
+                            <span class="dtp">RR</span
+                            ><span class="dtt">&mdash;&deg;</span>
+                        </div>
+                    </div>
+                    <canvas id="dash-trace"></canvas>
+                </div>
+                <div id="dash-laps">
+                    <div>
+                        <span class="dl-lbl">Current</span
+                        ><span id="d-cur">--:--.---</span>
+                    </div>
+                    <div>
+                        <span class="dl-lbl">Best</span
+                        ><span id="d-best">--:--.---</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1297,6 +1755,7 @@
                     polyline,
                     marker,
                     tracePoints: [],
+                    telemetryHistory: [],
                     cardEl,
                     markerOnMap: false,
                 };
@@ -1308,6 +1767,15 @@
              */
             function applyPacket(player, packet) {
                 player.packet = packet;
+
+                /* Accumulate history for dashboard traces. */
+                player.telemetryHistory.push({
+                    throttle: packet.throttle,
+                    brake: packet.brake,
+                    speedMs: packet.speedMs,
+                });
+                if (player.telemetryHistory.length > HIST_MAX)
+                    player.telemetryHistory.shift();
 
                 const { positionX, positionZ, yaw } = packet;
 
@@ -1630,6 +2098,377 @@
                         console.warn("[SW] registration failed:", err),
                     );
             }
+
+            /* ═══════════════════════════════════════════════════════════════════
+             DASHBOARD VIEW
+             ═══════════════════════════════════════════════════════════════════ */
+
+            const HIST_MAX = 400;
+            let dashId = null;
+            let dashRaf = null;
+
+            function dashEnter() {
+                const ids = [...players.keys()];
+                if (ids.length === 1) {
+                    dashPick(ids[0]);
+                } else {
+                    dashShowPicker();
+                }
+            }
+
+            function dashShowPicker() {
+                document.getElementById("dash-picker").style.display = "";
+                document.getElementById("dash-telem").style.display = "none";
+                const list = document.getElementById("dash-picker-list");
+                list.innerHTML = "";
+
+                if (players.size === 0) {
+                    list.innerHTML = `<p style="color:var(--tx-xdim);font-size:12px">Waiting for players…</p>`;
+                    return;
+                }
+
+                for (const [id, pl] of players) {
+                    const p = pl.packet;
+                    const carName =
+                        (typeof CAR_NAMES !== "undefined" &&
+                            p &&
+                            CAR_NAMES[p.carOrdinal]) ||
+                        "";
+                    const cls = p ? (CAR_CLASSES[p.carClass] ?? "?") : "?";
+                    const clsColor = p
+                        ? (CAR_CLASS_COLORS[p.carClass] ?? "#6b7280")
+                        : "#6b7280";
+                    const speed = p ? Math.round(p.speedMs * 2.23694) : 0;
+                    const gear = p
+                        ? p.gear === 0
+                            ? "R"
+                            : p.gear === 11
+                              ? "N"
+                              : String(p.gear)
+                        : "—";
+
+                    const card = document.createElement("button");
+                    card.className = "dpk-card";
+                    card.style.borderColor = pl.color;
+                    card.innerHTML = `
+                        <div class="dpk-name">
+                            <span class="dpk-dot" style="background:${pl.color}"></span>
+                            ${escHtml(pl.displayName)}
+                        </div>
+                        ${carName ? `<div class="dpk-car">${escHtml(carName)}</div>` : ""}
+                        <div class="dpk-stats">
+                            <div>
+                                <div class="dpk-stat-val">${speed}<span style="font-size:10px;font-weight:400"> mph</span></div>
+                                <div>Speed</div>
+                            </div>
+                            <div>
+                                <div class="dpk-stat-val">${gear}</div>
+                                <div>Gear</div>
+                            </div>
+                            <div>
+                                <span class="car-class-letter" style="background:${clsColor}">${cls}</span>
+                                ${p ? `<span class="car-pi-val">${p.carPi}</span>` : ""}
+                            </div>
+                        </div>
+                    `;
+                    card.addEventListener("click", () => dashPick(id));
+                    list.appendChild(card);
+                }
+            }
+
+            function dashPick(id) {
+                dashId = id;
+                document.getElementById("dash-picker").style.display = "none";
+                document.getElementById("dash-telem").style.display = "flex";
+
+                const pl = players.get(id);
+                document.getElementById("dh-dot").style.background = pl.color;
+                document.getElementById("dh-name").textContent = pl.displayName;
+
+                if (!dashRaf) dashRaf = requestAnimationFrame(dashFrame);
+            }
+
+            function dashFrame() {
+                if (document.body.getAttribute("data-tab") !== "dashboard") {
+                    dashRaf = null;
+                    return;
+                }
+                const pl = players.get(dashId);
+                if (!pl || !pl.packet) {
+                    dashRaf = requestAnimationFrame(dashFrame);
+                    return;
+                }
+                try {
+                    const p = pl.packet;
+                    const h = pl.telemetryHistory;
+
+                    /* Header */
+                    const carName =
+                        (typeof CAR_NAMES !== "undefined" &&
+                            CAR_NAMES[p.carOrdinal]) ||
+                        `#${p.carOrdinal}`;
+                    const cls = CAR_CLASSES[p.carClass] ?? "?";
+                    const clsColor = CAR_CLASS_COLORS[p.carClass] ?? "#6b7280";
+                    document.getElementById("dh-car").textContent = carName;
+                    document.getElementById("dh-class").innerHTML =
+                        `<span class="car-class-letter" style="background:${clsColor}">${cls}</span>` +
+                        `<span class="car-pi-val">${p.carPi}</span>`;
+                    const posEl = document.getElementById("dh-pos");
+                    posEl.textContent =
+                        p.racePosition > 0 ? `P${p.racePosition}` : "";
+                    posEl.style.display = p.racePosition > 0 ? "" : "none";
+                    document.getElementById("dh-lap").textContent =
+                        `Lap ${p.lapNumber > 0 ? p.lapNumber : "—"}`;
+
+                    /* Rev bar */
+                    dashDrawRevBar(
+                        document.getElementById("dash-rev"),
+                        p.currentEngineRpm,
+                        p.engineMaxRpm,
+                    );
+
+                    /* Speed */
+                    document.getElementById("d-spd").textContent = Math.round(
+                        p.speedMs * 2.23694,
+                    );
+
+                    /* Gear with RPM-based colour */
+                    const gearStr =
+                        p.gear === 0
+                            ? "R"
+                            : p.gear === 11
+                              ? "N"
+                              : String(p.gear);
+                    const rpmPct =
+                        p.engineMaxRpm > 0
+                            ? p.currentEngineRpm / p.engineMaxRpm
+                            : 0;
+                    const gearColor =
+                        rpmPct > 0.9
+                            ? "#ef4444"
+                            : rpmPct > 0.78
+                              ? "#f59e0b"
+                              : "#ffffff";
+                    const gearGlow =
+                        rpmPct > 0.9
+                            ? "0 0 40px rgba(239,68,68,0.8),  0 0 80px rgba(239,68,68,0.3)"
+                            : rpmPct > 0.78
+                              ? "0 0 40px rgba(245,158,11,0.7), 0 0 80px rgba(245,158,11,0.2)"
+                              : "0 0 30px rgba(59,130,246,0.5), 0 0 70px rgba(59,130,246,0.15)";
+                    const gearEl = document.getElementById("d-gear");
+                    gearEl.textContent = gearStr;
+                    gearEl.style.color = gearColor;
+                    gearEl.style.textShadow = gearGlow;
+
+                    /* Pedals */
+                    const tPct = Math.round((p.throttle / 255) * 100);
+                    const bPct = Math.round((p.brake / 255) * 100);
+                    const cPct = Math.round((p.clutch / 255) * 100);
+                    document.getElementById("dp-t").style.height = `${tPct}%`;
+                    document.getElementById("dp-b").style.height = `${bPct}%`;
+                    document.getElementById("dp-c").style.height = `${cPct}%`;
+                    document.getElementById("dp-tp").textContent = `${tPct}%`;
+                    document.getElementById("dp-bp").textContent = `${bPct}%`;
+                    document.getElementById("dp-cp").textContent = `${cPct}%`;
+
+                    /* Tires */
+                    dashDrawTire("dt-fl", p.tireTempFl);
+                    dashDrawTire("dt-fr", p.tireTempFr);
+                    dashDrawTire("dt-rl", p.tireTempRl);
+                    dashDrawTire("dt-rr", p.tireTempRr);
+
+                    /* Traces canvas */
+                    dashDrawTraces(document.getElementById("dash-trace"), h);
+
+                    /* Lap times */
+                    document.getElementById("d-cur").textContent = fmtTime(
+                        p.currentLap,
+                    );
+                    document.getElementById("d-best").textContent = fmtTime(
+                        p.bestLap,
+                    );
+                } catch (err) {
+                    console.warn("[dash] frame error:", err);
+                }
+                dashRaf = requestAnimationFrame(dashFrame);
+            }
+
+            function dashDrawTire(id, tempC) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const col = tireTempColor(tempC);
+                el.style.background = col + "28";
+                el.style.borderColor = col + "80";
+                el.querySelector(".dtt").textContent = `${Math.round(tempC)}°`;
+                el.querySelector(".dtt").style.color = col;
+            }
+
+            function dashDrawRevBar(canvas, rpm, maxRpm) {
+                const W = canvas.width,
+                    H = canvas.height;
+                if (!W || !H) return;
+                const dpr = window.devicePixelRatio || 1;
+                const ctx = canvas.getContext("2d");
+                const N = 20,
+                    pad = 8 * dpr,
+                    gap = 3 * dpr;
+                const segW = (W - pad * 2 - gap * (N - 1)) / N;
+                const pct = maxRpm > 0 ? Math.min(1, rpm / maxRpm) : 0;
+                const lit = Math.round(pct * N);
+
+                ctx.clearRect(0, 0, W, H);
+                for (let i = 0; i < N; i++) {
+                    const x = pad + i * (segW + gap);
+                    const on =
+                        i < 10 ? "#22c55e" : i < 15 ? "#f59e0b" : "#ef4444";
+                    const off =
+                        i < 10 ? "#051a0b" : i < 15 ? "#1a1100" : "#1a0303";
+                    ctx.shadowColor = on;
+                    ctx.shadowBlur = i < lit ? 8 * dpr : 0;
+                    ctx.fillStyle = i < lit ? on : off;
+                    ctx.beginPath();
+                    ctx.roundRect(x, 2 * dpr, segW, H - 4 * dpr, 2 * dpr);
+                    ctx.fill();
+                }
+                ctx.shadowBlur = 0;
+            }
+
+            function dashDrawTraces(canvas, history) {
+                const W = canvas.width,
+                    H = canvas.height;
+                if (!W || !H) return;
+                const dpr = window.devicePixelRatio || 1;
+                const ctx = canvas.getContext("2d");
+
+                ctx.fillStyle = "#020609";
+                ctx.fillRect(0, 0, W, H);
+                if (history.length < 2) return;
+
+                const N = Math.min(history.length, Math.ceil(W));
+                const s = history.length - N;
+                const dx = W / N;
+                const lh = H / 3;
+
+                /* dividers */
+                ctx.strokeStyle = "rgba(255,255,255,0.05)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, lh);
+                ctx.lineTo(W, lh);
+                ctx.moveTo(0, lh * 2);
+                ctx.lineTo(W, lh * 2);
+                ctx.stroke();
+
+                /* speed – slate line (top lane) */
+                const maxSpd = history.reduce(
+                    (m, h) => Math.max(m, h.speedMs),
+                    0.1,
+                );
+                ctx.strokeStyle = "rgba(148,163,184,0.85)";
+                ctx.lineWidth = 1.5 * dpr;
+                ctx.beginPath();
+                for (let i = 0; i < N; i++) {
+                    const h = history[s + i];
+                    const x = i * dx;
+                    const y = lh - (h.speedMs / maxSpd) * (lh - 2 * dpr);
+                    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+
+                /* throttle – green fill (middle lane) */
+                ctx.fillStyle = "rgba(34,197,94,0.75)";
+                ctx.beginPath();
+                ctx.moveTo(0, lh * 2);
+                for (let i = 0; i < N; i++) {
+                    const h = history[s + i];
+                    ctx.lineTo(
+                        i * dx,
+                        lh + lh - (h.throttle / 255) * (lh - 2 * dpr),
+                    );
+                }
+                ctx.lineTo((N - 1) * dx, lh * 2);
+                ctx.closePath();
+                ctx.fill();
+
+                /* brake – red fill (bottom lane) */
+                ctx.fillStyle = "rgba(239,68,68,0.75)";
+                ctx.beginPath();
+                ctx.moveTo(0, H);
+                for (let i = 0; i < N; i++) {
+                    const h = history[s + i];
+                    ctx.lineTo(
+                        i * dx,
+                        lh * 2 + lh - (h.brake / 255) * (lh - 2 * dpr),
+                    );
+                }
+                ctx.lineTo((N - 1) * dx, H);
+                ctx.closePath();
+                ctx.fill();
+
+                /* labels */
+                const sz = Math.max(8, 9 * dpr);
+                ctx.font = `${sz}px "Courier New",monospace`;
+                ctx.fillStyle = "rgba(148,163,184,0.4)";
+                ctx.fillText("SPD", 5 * dpr, 11 * dpr);
+                ctx.fillStyle = "rgba(34,197,94,0.5)";
+                ctx.fillText("THR", 5 * dpr, lh + 11 * dpr);
+                ctx.fillStyle = "rgba(239,68,68,0.5)";
+                ctx.fillText("BRK", 5 * dpr, lh * 2 + 11 * dpr);
+            }
+
+            /* Keep canvas pixel dimensions in sync with CSS layout.
+               ResizeObserver fires as soon as the element becomes visible,
+               so canvas.width/height are always valid before dashFrame draws. */
+            (function initDashCanvasSizing() {
+                const dpr = window.devicePixelRatio || 1;
+                const ro = new ResizeObserver(function (entries) {
+                    for (const e of entries) {
+                        const el = e.target;
+                        const w = Math.round(e.contentRect.width * dpr);
+                        const h = Math.round(e.contentRect.height * dpr);
+                        if (w > 0 && h > 0) {
+                            el.width = w;
+                            el.height = h;
+                        }
+                    }
+                });
+                ro.observe(document.getElementById("dash-trace"));
+                ro.observe(document.getElementById("dash-rev"));
+            })();
+
+            /* ── Tab switching ─────────────────────────────────────────────────── */
+            (function initTabs() {
+                function setTab(tab) {
+                    document.body.setAttribute("data-tab", tab);
+                    document
+                        .querySelectorAll(".tab-btn")
+                        .forEach(function (btn) {
+                            btn.classList.toggle(
+                                "active",
+                                btn.dataset.tab === tab,
+                            );
+                        });
+                    if (tab === "map") {
+                        if (dashRaf) {
+                            cancelAnimationFrame(dashRaf);
+                            dashRaf = null;
+                        }
+                        setTimeout(function () {
+                            map.invalidateSize();
+                        }, 10);
+                    } else {
+                        dashEnter();
+                    }
+                }
+
+                document.querySelectorAll(".tab-btn").forEach(function (btn) {
+                    btn.addEventListener("click", function () {
+                        setTab(btn.dataset.tab);
+                    });
+                });
+
+                setTab("map");
+            })();
 
             /* ── Bootstrap ────────────────────────────────────────────────────── */
             connect();
