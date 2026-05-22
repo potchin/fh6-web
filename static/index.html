@@ -244,6 +244,8 @@
                 gap: 8px;
                 min-height: 0;
                 min-width: 0;
+                container-type: inline-size;
+                container-name: cards;
             }
             #cards-panel::-webkit-scrollbar {
                 width: 5px;
@@ -589,6 +591,44 @@
                 color: #a855f7;
             }
 
+            /* Handbrake warning light */
+            #d-hb {
+                color: #1f2937;
+                transition:
+                    color 0.1s,
+                    filter 0.1s;
+            }
+            #d-hb.active {
+                color: #ef4444;
+                filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.8));
+            }
+
+            /* Boost bar */
+            #d-boost {
+                font-family: "Courier New", monospace;
+                font-size: clamp(1rem, 3.5vw, 2rem);
+                font-weight: 700;
+                color: var(--tx);
+                font-variant-numeric: tabular-nums;
+                transition: color 0.15s;
+            }
+            .dl-boost-bar {
+                width: 60px;
+                height: 3px;
+                background: var(--bg-elevated);
+                border-radius: 2px;
+                overflow: hidden;
+            }
+            #d-boost-fill {
+                height: 100%;
+                width: 0%;
+                background: #3b82f6;
+                border-radius: 2px;
+                transition:
+                    width 80ms linear,
+                    background 80ms linear;
+            }
+
             /* ── Player card ─────────────────────────────────────────────────────── */
             .player-card {
                 background: var(--bg-card);
@@ -626,6 +666,47 @@
             .color-dot:hover {
                 box-shadow: 0 0 0 3px
                     color-mix(in srgb, var(--dot-color) 45%, transparent);
+            }
+            .color-dot.following {
+                box-shadow:
+                    0 0 0 3px
+                        color-mix(in srgb, var(--dot-color) 60%, transparent),
+                    0 0 0 6px
+                        color-mix(in srgb, var(--dot-color) 22%, transparent);
+                animation: dot-follow-pulse 1.4s ease-in-out infinite;
+            }
+            @keyframes dot-follow-pulse {
+                0%,
+                100% {
+                    box-shadow:
+                        0 0 0 3px
+                            color-mix(
+                                in srgb,
+                                var(--dot-color) 60%,
+                                transparent
+                            ),
+                        0 0 0 6px
+                            color-mix(
+                                in srgb,
+                                var(--dot-color) 22%,
+                                transparent
+                            );
+                }
+                50% {
+                    box-shadow:
+                        0 0 0 4px
+                            color-mix(
+                                in srgb,
+                                var(--dot-color) 75%,
+                                transparent
+                            ),
+                        0 0 0 9px
+                            color-mix(
+                                in srgb,
+                                var(--dot-color) 28%,
+                                transparent
+                            );
+                }
             }
             /* stack name + car line vertically inside the label row */
             .card-identity {
@@ -719,6 +800,28 @@
                 padding: 1px 5px;
                 border-radius: 3px;
                 white-space: nowrap;
+            }
+
+            /* in-menu state */
+            .in-menu-badge {
+                display: inline-block;
+                font-size: 9px;
+                font-weight: 800;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--tx-xdim);
+                background: var(--bg-elevated);
+                border: 1px solid var(--bd);
+                padding: 1px 6px;
+                border-radius: 3px;
+            }
+            .player-card[data-in-menu] .speed-gear-row,
+            .player-card[data-in-menu] .bar-row,
+            .player-card[data-in-menu] .pedals-section,
+            .player-card[data-in-menu] .tire-grid,
+            .player-card[data-in-menu] .lap-row {
+                opacity: 0.2;
+                pointer-events: none;
             }
 
             /* speed + gear row */
@@ -913,6 +1016,36 @@
             }
 
             /* ── Leaflet overrides ───────────────────────────────────────────────── */
+            /* ── Narrow-card responsive fixes (container query) ─────────────────── */
+            @container cards (max-width: 200px) {
+                .player-card {
+                    padding: 7px 8px 7px 9px;
+                }
+                .speed-val {
+                    font-size: 20px;
+                }
+                .gear-box {
+                    font-size: 18px;
+                    min-width: 36px;
+                    padding: 2px 7px;
+                }
+                .tire-temp-val {
+                    font-size: 11px;
+                }
+                .lap-row {
+                    flex-wrap: wrap;
+                    row-gap: 2px;
+                }
+                .lap-cur {
+                    font-size: 12px;
+                }
+                .lap-best {
+                    font-size: 8px;
+                    width: 100%;
+                    text-align: right;
+                }
+            }
+
             .leaflet-container {
                 background: #030712 !important;
                 font-family: system-ui, sans-serif !important;
@@ -1063,6 +1196,42 @@
                     <div>
                         <span class="dl-lbl">Current</span
                         ><span id="d-cur">--:--.---</span>
+                    </div>
+                    <div id="d-hb">
+                        <svg
+                            viewBox="0 0 20 20"
+                            width="28"
+                            height="28"
+                            aria-hidden="true"
+                        >
+                            <circle
+                                cx="10"
+                                cy="10"
+                                r="8.5"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                fill="none"
+                            />
+                            <text
+                                x="10"
+                                y="14.2"
+                                text-anchor="middle"
+                                font-size="9.5"
+                                font-weight="900"
+                                font-family="system-ui,sans-serif"
+                                fill="currentColor"
+                            >
+                                P
+                            </text>
+                        </svg>
+                        <span class="dl-lbl">HB</span>
+                    </div>
+                    <div>
+                        <span class="dl-lbl">Boost</span
+                        ><span id="d-boost">0.00</span>
+                        <div class="dl-boost-bar">
+                            <div id="d-boost-fill"></div>
+                        </div>
                     </div>
                     <div>
                         <span class="dl-lbl">Best</span
@@ -1284,7 +1453,7 @@
                 card.innerHTML = `
               <div class="card-header">
                 <div class="card-label-row">
-                <span class="color-dot" style="background:${color};--dot-color:${color}" title="Center on map" data-center-player="${escHtml(id)}"></span>
+                <span class="color-dot" style="background:${color};--dot-color:${color}" title="Center on map · Double-click to follow" data-center-player="${escHtml(id)}"></span>
                 <div class="card-identity">
                   <span class="player-name" id="pname-${sid}" title="Click to rename" data-player-id="${escHtml(id)}">${escHtml(label)}</span>
                   <div class="car-line">
@@ -1430,25 +1599,42 @@
                 setHtml(`lapc-${sid}`, fmtTime(p.currentLap));
                 setHtml(`lapb-${sid}`, fmtTime(p.bestLap));
 
-                /* Car class badge – always shown, Forza-style */
-                const cls = CAR_CLASSES[p.carClass] ?? "?";
-                const clsColor = CAR_CLASS_COLORS[p.carClass] ?? "#6b7280";
-                setHtml(
-                    `car-class-${sid}`,
-                    `<span class="car-class-letter" style="background:${clsColor}">${cls}</span>` +
-                        `<span class="car-pi-val">${p.carPi}</span>`,
-                );
+                /* In-menu detection: carPi === 0 means no car is loaded */
+                const cardEl = document.getElementById(`card-${sid}`);
+                const isInMenu = p.carPi === 0;
+                if (cardEl) {
+                    if (isInMenu) cardEl.dataset.inMenu = "";
+                    else delete cardEl.dataset.inMenu;
+                }
 
-                /* Car name or debug ordinal */
-                const carName =
-                    typeof CAR_NAMES !== "undefined" && CAR_NAMES[p.carOrdinal];
-                if (carName) {
-                    setHtml(`car-detail-${sid}`, escHtml(carName));
-                } else {
+                /* Car class badge – Forza-style, or IN MENU indicator */
+                if (isInMenu) {
                     setHtml(
-                        `car-detail-${sid}`,
-                        `<span class="car-ordinal">#${p.carOrdinal}</span>`,
+                        `car-class-${sid}`,
+                        `<span class="in-menu-badge">IN MENU</span>`,
                     );
+                    setHtml(`car-detail-${sid}`, "");
+                } else {
+                    const cls = CAR_CLASSES[p.carClass] ?? "?";
+                    const clsColor = CAR_CLASS_COLORS[p.carClass] ?? "#6b7280";
+                    setHtml(
+                        `car-class-${sid}`,
+                        `<span class="car-class-letter" style="background:${clsColor}">${cls}</span>` +
+                            `<span class="car-pi-val">${p.carPi}</span>`,
+                    );
+
+                    /* Car name or debug ordinal */
+                    const carName =
+                        typeof CAR_NAMES !== "undefined" &&
+                        CAR_NAMES[p.carOrdinal];
+                    if (carName) {
+                        setHtml(`car-detail-${sid}`, escHtml(carName));
+                    } else {
+                        setHtml(
+                            `car-detail-${sid}`,
+                            `<span class="car-ordinal">#${p.carOrdinal}</span>`,
+                        );
+                    }
                 }
 
                 /* Race position badge (hide when 0) */
@@ -1497,6 +1683,34 @@
 
             /** @type {Map<string, object>} */
             const players = new Map();
+
+            /* ── Follow mode ────────────────────────────────────────────────────────
+             Tracks which player_id (if any) the map should pan to on each update.
+             ─────────────────────────────────────────────────────────────────────── */
+            let followedPlayerId = null;
+
+            function toggleFollow(id) {
+                const panel = document.getElementById("cards-panel");
+                // Remove visual from previously-followed dot (if any)
+                if (followedPlayerId) {
+                    const oldDot = panel.querySelector(
+                        `[data-center-player="${followedPlayerId}"]`,
+                    );
+                    if (oldDot) oldDot.classList.remove("following");
+                }
+                if (followedPlayerId === id) {
+                    // Already following this player — turn off
+                    followedPlayerId = null;
+                } else {
+                    // Start following new player
+                    followedPlayerId = id;
+                    const dot = panel.querySelector(
+                        `[data-center-player="${id}"]`,
+                    );
+                    if (dot) dot.classList.add("following");
+                    centerOnPlayer(id);
+                }
+            }
 
             /** FH6 car class index → display label. */
             const CAR_CLASSES = ["D", "C", "B", "A", "S1", "S2", "R"];
@@ -1694,28 +1908,34 @@
                 });
             }
 
-            // Single delegated listener – handles clicks on any .player-name span or color dot.
+            // Delegated listeners – handle clicks on player name spans and color dots.
+            // Single click on dot  → center map on player
+            // Double click on dot  → toggle follow mode (map pans with player)
+            let _dotClickTimer = null;
             document
                 .getElementById("cards-panel")
                 .addEventListener("click", (e) => {
-                    console.log(
-                        "[click] cards-panel click, target:",
-                        e.target,
-                        "classes:",
-                        e.target.className,
-                    );
                     const nameTarget = e.target.closest(
                         ".player-name[data-player-id]",
                     );
-                    console.log("[click] nameTarget:", nameTarget);
                     if (nameTarget) {
                         beginRename(nameTarget.dataset.playerId);
                         return;
                     }
                     const dotTarget = e.target.closest("[data-center-player]");
-                    console.log("[click] dotTarget:", dotTarget);
-                    if (dotTarget)
-                        centerOnPlayer(dotTarget.dataset.centerPlayer);
+                    if (!dotTarget) return;
+                    const id = dotTarget.dataset.centerPlayer;
+                    // Distinguish single vs double click with a short timer
+                    if (_dotClickTimer !== null) {
+                        clearTimeout(_dotClickTimer);
+                        _dotClickTimer = null;
+                        toggleFollow(id);
+                    } else {
+                        _dotClickTimer = setTimeout(() => {
+                            _dotClickTimer = null;
+                            centerOnPlayer(id);
+                        }, 260);
+                    }
                 });
 
             function createPlayer(id, label, color) {
@@ -1806,6 +2026,11 @@
                             headingDeg,
                         ),
                     );
+
+                    /* ── Follow mode: pan map to keep this player centred ── */
+                    if (followedPlayerId === player.id) {
+                        map.panTo(latlng, { animate: true, duration: 0.25 });
+                    }
                 }
 
                 updateCard(player);
@@ -1818,6 +2043,14 @@
                     `offline-${safeId(player.id)}`,
                 );
                 if (ov) ov.style.display = "flex";
+                // Cancel follow if this player went offline
+                if (followedPlayerId === player.id) {
+                    const dot = document
+                        .getElementById(`card-${safeId(player.id)}`)
+                        ?.querySelector("[data-center-player]");
+                    if (dot) dot.classList.remove("following");
+                    followedPlayerId = null;
+                }
             }
 
             /* ═══════════════════════════════════════════════════════════════════
@@ -2287,6 +2520,28 @@
                     document.getElementById("d-best").textContent = fmtTime(
                         p.bestLap,
                     );
+
+                    /* Handbrake */
+                    document
+                        .getElementById("d-hb")
+                        .classList.toggle("active", p.handbrake > 0);
+
+                    /* Boost — bar fills 0→2 bar, colour shifts blue→amber→red */
+                    const boostPos = Math.max(0, p.boost);
+                    const boostPct = Math.min(100, (boostPos / 2.0) * 100);
+                    const boostColor =
+                        boostPos > 1.5
+                            ? "#ef4444"
+                            : boostPos > 0.8
+                              ? "#f59e0b"
+                              : "#3b82f6";
+                    document.getElementById("d-boost").textContent =
+                        p.boost.toFixed(2);
+                    document.getElementById("d-boost").style.color =
+                        boostPos > 0 ? boostColor : "var(--tx)";
+                    const boostFill = document.getElementById("d-boost-fill");
+                    boostFill.style.width = `${boostPct.toFixed(1)}%`;
+                    boostFill.style.background = boostColor;
                 } catch (err) {
                     console.warn("[dash] frame error:", err);
                 }

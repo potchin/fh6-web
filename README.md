@@ -6,7 +6,12 @@ Receives UDP telemetry from one or more players simultaneously, identifies each 
 
 Full disclosure: this is mostly vibecoded. It's designed to be a self-hosted private instance handling local data. I've put it together for fun and to mess around with. Props to [fh6-tel](https://github.com/TheBanHammer/fh6-tel) by BanHammer for the original idea.
 
+## Screenshots
+
+### Desktop
 ![desktop](screenshot.png)
+
+### Mobile (PWA)
 ![mobile](pwa-screenshot.png)
 
 ## Features
