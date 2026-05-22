@@ -17,7 +17,7 @@
             content="black-translucent"
         />
         <meta name="apple-mobile-web-app-title" content="FH6" />
-        <link rel="apple-touch-icon" href="/icons/icon.svg" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link
             rel="stylesheet"
             href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -166,6 +166,12 @@
                 transform: translate(-50%, -50%);
                 height: 2px;
                 width: 48px;
+            }
+            /* Guarantee full width for both panels in column mode. */
+            #main-layout.split-col > #map-panel,
+            #main-layout.split-col > #cards-panel {
+                width: 100%;
+                max-width: 100%;
             }
 
             /* ── Map panel ───────────────────────────────────────────────────────── */
@@ -662,6 +668,8 @@
                 zoomControl: true,
                 minZoom: VIEW_MIN,
                 maxZoom: VIEW_MAX,
+                // Prevent pinch-to-zoom from temporarily exceeding min/maxZoom.
+                bounceAtZoomLimits: false,
             });
 
             L.tileLayer("/maptiles/{z}/{y}/{x}.jpg", {
@@ -1493,15 +1501,43 @@
                 }
 
                 function applyPct(pct) {
-                    mapPanel.style.flex = `0 0 ${pct.toFixed(2)}%`;
-                    cardsPanel.style.flex = `0 0 ${(100 - pct).toFixed(2)}%`;
+                    if (isRow()) {
+                        // Row mode: flex-basis drives width directly.
+                        mapPanel.style.height = "";
+                        cardsPanel.style.height = "";
+                        mapPanel.style.flex = `0 0 ${pct.toFixed(2)}%`;
+                        cardsPanel.style.flex = `0 0 ${(100 - pct).toFixed(2)}%`;
+                    } else {
+                        // Column mode: set explicit pixel heights.
+                        // flex-basis percentages in column containers are computed
+                        // against the container height, which works in spec-compliant
+                        // browsers, but using px is more reliable across iOS Safari.
+                        mapPanel.style.flex = "0 0 auto";
+                        cardsPanel.style.flex = "0 0 auto";
+                        const resizerPx = 5; // matches CSS height: 5px
+                        const totalH =
+                            layout.getBoundingClientRect().height ||
+                            window.innerHeight - 46;
+                        const usable = Math.max(0, totalH - resizerPx);
+                        const mapH = Math.round((pct / 100) * usable);
+                        mapPanel.style.height = `${mapH}px`;
+                        cardsPanel.style.height = `${usable - mapH}px`;
+                    }
                 }
 
                 function currentPct() {
-                    const m = (mapPanel.style.flex || "").match(
-                        /0 0 ([0-9.]+)%/,
-                    );
-                    return m ? parseFloat(m[1]) : isRow() ? 65 : 55;
+                    if (isRow()) {
+                        const m = (mapPanel.style.flex || "").match(
+                            /0 0 ([0-9.]+)%/,
+                        );
+                        return m ? parseFloat(m[1]) : 65;
+                    } else {
+                        const resizerPx = 5;
+                        const totalH =
+                            layout.getBoundingClientRect().height - resizerPx;
+                        const mapH = mapPanel.getBoundingClientRect().height;
+                        return totalH > 0 ? (mapH / totalH) * 100 : 55;
+                    }
                 }
 
                 function restoreSplit() {
