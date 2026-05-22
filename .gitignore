@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+.env
+
+# Docker
+.dockerignore
+
+# Editor
+.vscode/
+.idea/
+*.swp

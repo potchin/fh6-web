@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>FH6 Multi Telemetry</title>
+        <link
+            rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        />
+        <style>
+            /* ── Reset ──────────────────────────────────────────────────────────── */
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            /* ── Theme variables ─────────────────────────────────────────────────
+       Mirror the fh6-tel dark theme so the web view feels at home.         */
+            :root {
+                --bg: #030712;
+                --bg-panel: #060c14;
+                --bg-card: #0a1628;
+                --bg-elevated: #0f1e35;
+                --bd: #1a2d47;
+                --bd-subtle: #142238;
+                --tx: #e2e8f0;
+                --tx-dim: #7a9ab5;
+                --tx-xdim: #3d5a78;
+                --ac: #3b82f6;
+                --header-h: 46px;
+            }
+
+            html,
+            body {
+                height: 100%;
+                overflow: hidden;
+                background: var(--bg);
+                color: var(--tx);
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    "Segoe UI",
+                    sans-serif;
+                font-size: 13px;
+                line-height: 1.4;
+            }
+
+            /* ── Header ──────────────────────────────────────────────────────────── */
+            #header {
+                height: var(--header-h);
+                background: var(--bg-panel);
+                border-bottom: 1px solid var(--bd);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 16px;
+                flex-shrink: 0;
+                z-index: 1000;
+                position: relative;
+            }
+
+            .header-title {
+                font-size: 15px;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                color: var(--tx);
+                text-transform: uppercase;
+            }
+            .header-title span {
+                color: var(--ac);
+            }
+
+            .conn-status {
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.04em;
+                font-family: "Courier New", monospace;
+                transition: color 0.3s;
+            }
+            .conn-status.connected {
+                color: #22c55e;
+            }
+            .conn-status.disconnected {
+                color: var(--tx-xdim);
+            }
+            .conn-status.reconnecting {
+                color: #f59e0b;
+            }
+
+            /* ── Main layout ─────────────────────────────────────────────────────── */
+            #main-layout {
+                display: flex;
+                height: calc(100vh - var(--header-h));
+                overflow: hidden;
+            }
+
+            /* ── Map panel ───────────────────────────────────────────────────────── */
+            #map-panel {
+                flex: 0 0 65%;
+                position: relative;
+                background: var(--bg-panel);
+                border-right: 1px solid var(--bd);
+            }
+
+            #map {
+                width: 100%;
+                height: 100%;
+            }
+
+            /* ── Cards panel ─────────────────────────────────────────────────────── */
+            #cards-panel {
+                flex: 0 0 35%;
+                overflow-y: auto;
+                overflow-x: hidden;
+                background: var(--bg);
+                padding: 8px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                min-height: 0;
+            }
+            #cards-panel::-webkit-scrollbar {
+                width: 5px;
+            }
+            #cards-panel::-webkit-scrollbar-track {
+                background: var(--bg);
+            }
+            #cards-panel::-webkit-scrollbar-thumb {
+                background: var(--bd);
+                border-radius: 3px;
+            }
+            #cards-panel::-webkit-scrollbar-thumb:hover {
+                background: var(--bd-subtle);
+            }
+
+            #empty-state {
+                color: var(--tx-xdim);
+                font-size: 12px;
+                text-align: center;
+                padding: 32px 16px;
+                letter-spacing: 0.04em;
+            }
+
+            /* ── Player card ─────────────────────────────────────────────────────── */
+            .player-card {
+                background: var(--bg-card);
+                border: 1px solid var(--bd);
+                border-radius: 8px;
+                border-left-width: 3px; /* player colour accent set via style attr */
+                padding: 10px 10px 10px 11px;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                gap: 7px;
+            }
+
+            /* header row: name + race position badge */
+            .card-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .card-label-row {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                min-width: 0;
+            }
+            .color-dot {
+                width: 9px;
+                height: 9px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+            .player-name {
+                font-weight: 700;
+                font-size: 13px;
+                color: var(--tx);
+                letter-spacing: 0.03em;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .car-info {
+                font-size: 10px;
+                font-weight: 600;
+                color: var(--tx-xdim);
+                white-space: nowrap;
+                letter-spacing: 0.04em;
+                margin-left: 4px;
+            }
+            .race-pos-badge {
+                font-size: 9px;
+                font-weight: 800;
+                letter-spacing: 0.1em;
+                color: var(--tx-xdim);
+                background: var(--bg-elevated);
+                padding: 1px 5px;
+                border-radius: 3px;
+                white-space: nowrap;
+            }
+
+            /* speed + gear row */
+            .speed-gear-row {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+            }
+            .speed-val {
+                font-family: "Courier New", Courier, monospace;
+                font-size: 26px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+                color: var(--tx);
+                line-height: 1;
+            }
+            .speed-val .speed-unit {
+                font-size: 11px;
+                color: var(--tx-dim);
+                margin-left: 3px;
+            }
+            .gear-box {
+                font-family: "Courier New", Courier, monospace;
+                font-size: 22px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+                color: var(--tx-dim);
+                background: var(--bg-elevated);
+                border: 1px solid var(--bd);
+                padding: 2px 10px;
+                border-radius: 5px;
+                line-height: 1.3;
+                min-width: 44px;
+                text-align: center;
+            }
+
+            /* generic labelled bar row (RPM) */
+            .bar-row {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .bar-row-label {
+                font-size: 9px;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                color: var(--tx-xdim);
+                width: 30px;
+                flex-shrink: 0;
+            }
+            .bar-track {
+                flex: 1;
+                height: 7px;
+                background: var(--bg-elevated);
+                border-radius: 4px;
+                overflow: hidden;
+            }
+            .bar-fill {
+                height: 100%;
+                border-radius: 4px;
+                transition: width 80ms linear;
+            }
+            .bar-row-end {
+                font-family: "Courier New", monospace;
+                font-size: 9px;
+                color: var(--tx-dim);
+                width: 38px;
+                text-align: right;
+                flex-shrink: 0;
+            }
+
+            /* pedal rows */
+            .pedals-section {
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+            }
+            .pedal-row {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .pedal-lbl {
+                font-size: 9px;
+                font-weight: 800;
+                letter-spacing: 0.1em;
+                width: 10px;
+                flex-shrink: 0;
+                text-align: center;
+            }
+            .t-lbl {
+                color: #22c55e;
+            }
+            .b-lbl {
+                color: #ef4444;
+            }
+            .c-lbl {
+                color: #6b7280;
+            }
+            .t-fill {
+                background: #22c55e;
+                transition: width 80ms linear;
+            }
+            .b-fill {
+                background: #ef4444;
+                transition: width 80ms linear;
+            }
+            .c-fill {
+                background: #6b7280;
+                transition: width 80ms linear;
+            }
+            .pedal-pct {
+                font-family: "Courier New", monospace;
+                font-size: 9px;
+                color: var(--tx-dim);
+                width: 28px;
+                text-align: right;
+                flex-shrink: 0;
+            }
+
+            /* tire 2×2 grid */
+            .tire-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 4px;
+            }
+            .tire-cell {
+                background: var(--bg-elevated);
+                border: 1px solid var(--bd);
+                border-radius: 5px;
+                padding: 4px 7px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                transition:
+                    background 0.25s,
+                    border-color 0.25s,
+                    color 0.25s;
+            }
+            .tire-pos {
+                font-size: 9px;
+                font-weight: 800;
+                letter-spacing: 0.1em;
+                opacity: 0.65;
+            }
+            .tire-temp-val {
+                font-family: "Courier New", monospace;
+                font-size: 13px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+            }
+
+            /* lap info */
+            .lap-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                gap: 4px;
+            }
+            .lap-num {
+                font-size: 10px;
+                color: var(--tx-xdim);
+            }
+            .lap-cur {
+                font-family: "Courier New", monospace;
+                font-size: 14px;
+                font-weight: 700;
+                color: var(--tx);
+                font-variant-numeric: tabular-nums;
+            }
+            .lap-best {
+                font-family: "Courier New", monospace;
+                font-size: 10px;
+                color: var(--tx-dim);
+                font-variant-numeric: tabular-nums;
+            }
+
+            /* offline overlay */
+            .offline-overlay {
+                position: absolute;
+                inset: 0;
+                background: rgba(3, 7, 18, 0.78);
+                backdrop-filter: blur(3px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                font-weight: 800;
+                letter-spacing: 0.2em;
+                color: #4b5563;
+                border-radius: 8px;
+            }
+
+            /* ── Leaflet overrides ───────────────────────────────────────────────── */
+            .leaflet-container {
+                background: #030712 !important;
+                font-family: system-ui, sans-serif !important;
+            }
+            .leaflet-tile {
+                /* slight border-radius softens the tile grid seams at low zoom */
+                image-rendering: auto;
+            }
+            /* Strip Leaflet's default divIcon box so the SVG arrow shows cleanly */
+            .player-arrow-icon {
+                background: none !important;
+                border: none !important;
+            }
+
+            /* Arrow marker inner elements */
+            .pm-wrap {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                pointer-events: none;
+                user-select: none;
+                width: 80px;
+            }
+            .pm-label {
+                background: rgba(3, 7, 18, 0.88);
+                color: #e2e8f0;
+                font-size: 10px;
+                font-weight: 700;
+                padding: 1px 5px;
+                border-radius: 3px;
+                white-space: nowrap;
+                max-width: 78px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                margin-bottom: 2px;
+                letter-spacing: 0.04em;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+        </style>
+    </head>
+    <body>
+        <!-- ── Header ─────────────────────────────────────────────────── -->
+        <header id="header">
+            <span class="header-title">FH6 <span>Multi</span> Telemetry</span>
+            <span class="conn-status disconnected" id="conn-status"
+                >● DISCONNECTED</span
+            >
+        </header>
+
+        <!-- ── Main layout ────────────────────────────────────────────── -->
+        <div id="main-layout">
+            <div id="map-panel">
+                <div id="map"></div>
+            </div>
+            <div id="cards-panel">
+                <p id="empty-state">Waiting for players…</p>
+            </div>
+        </div>
+
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="/car_names.js"></script>
+        <script>
+            "use strict";
+
+            /* ═══════════════════════════════════════════════════════════════════
+             CONFIG & CALIBRATION
+             World (positionX, positionZ) → full-res pixel (X, Y) via two
+             reference points. Per-axis linear fit handles axis reflection.
+             ═══════════════════════════════════════════════════════════════════ */
+            const CAL_A_WORLD = [-119.49154, 3888.595];
+            const CAL_A_PIX = [2089486, 2087415];
+            const CAL_B_WORLD = [-7104.7695, -1863.08];
+            const CAL_B_PIX = [2086885, 2089556];
+
+            const TILE_ZOOM = 14; // native tile max zoom
+            const VIEW_MAX = 15; // allow zooming past tiles (upscale)
+            const VIEW_MIN = 9;
+            const DEFAULT_ZOOM = 14;
+            const DEFAULT_CENTER_PIX = [
+                (8128 * 256 + 8192 * 256) / 2, // = 2088960
+                (8128 * 256 + 8192 * 256) / 2,
+            ];
+
+            // Pre-compute slope + intercept for each axis once.
+            const _mX =
+                (CAL_B_PIX[0] - CAL_A_PIX[0]) /
+                (CAL_B_WORLD[0] - CAL_A_WORLD[0]);
+            const _mZ =
+                (CAL_B_PIX[1] - CAL_A_PIX[1]) /
+                (CAL_B_WORLD[1] - CAL_A_WORLD[1]);
+            const _bX = CAL_A_PIX[0] - _mX * CAL_A_WORLD[0];
+            const _bY = CAL_A_PIX[1] - _mZ * CAL_A_WORLD[1];
+
+            // Maximum trace points kept in memory per player before oldest are pruned.
+            const MAX_TRACE_PTS = 3000;
+
+            /* ═══════════════════════════════════════════════════════════════════
+             LEAFLET MAP SETUP
+             ═══════════════════════════════════════════════════════════════════ */
+
+            // XYZ tile pyramid uses Y-down pixel space. Extend L.CRS.Simple with
+            // a neutral transformation (Y NOT flipped) so tile row ordering and
+            // unproject() both operate in the same coordinate frame.
+            const FH6CRS = L.Util.extend({}, L.CRS.Simple, {
+                transformation: new L.Transformation(1, 0, 1, 0),
+            });
+
+            const map = L.map("map", {
+                crs: FH6CRS,
+                attributionControl: false,
+                zoomControl: true,
+                minZoom: VIEW_MIN,
+                maxZoom: VIEW_MAX,
+            });
+
+            L.tileLayer("/maptiles/{z}/{y}/{x}.jpg", {
+                minZoom: VIEW_MIN,
+                maxZoom: VIEW_MAX,
+                maxNativeZoom: TILE_ZOOM,
+                tileSize: 256,
+                noWrap: true,
+                keepBuffer: 2,
+            }).addTo(map);
+
+            // Separate layer groups so traces always render below markers.
+            const traceGroup = L.layerGroup().addTo(map);
+            const markerGroup = L.layerGroup().addTo(map);
+
+            // Position the initial view at the centre of the Japan tile extent.
+            map.setView(
+                map.unproject(
+                    L.point(DEFAULT_CENTER_PIX[0], DEFAULT_CENTER_PIX[1]),
+                    TILE_ZOOM,
+                ),
+                DEFAULT_ZOOM,
+            );
+
+            /* ═══════════════════════════════════════════════════════════════════
+             COORDINATE CONVERSION
+             ═══════════════════════════════════════════════════════════════════ */
+
+            /**
+             * Convert a FH6 world position to a Leaflet LatLng via pixel calibration.
+             * @param {number} worldX  – packet positionX
+             * @param {number} worldZ  – packet positionZ
+             * @returns {L.LatLng}
+             */
+            function worldToLatLng(worldX, worldZ) {
+                const pixX = _mX * worldX + _bX;
+                const pixY = _mZ * worldZ + _bY;
+                return map.unproject(L.point(pixX, pixY), TILE_ZOOM);
+            }
+
+            /* ═══════════════════════════════════════════════════════════════════
+             HELPERS
+             ═══════════════════════════════════════════════════════════════════ */
+
+            /**
+             * Returns a CSS colour for a tyre temperature (°C).
+             * Thresholds match fh6-tel defaults: cold 60, hot 110, overheated 130.
+             */
+            function tireTempColor(t) {
+                if (t < 60) return "#3b82f6"; // blue  – cold
+                if (t < 110) return "#22c55e"; // green – optimal
+                if (t < 130) return "#f59e0b"; // amber – hot
+                return "#ef4444"; // red   – overheated
+            }
+
+            /**
+             * Format a lap time given in seconds as  M:SS.mmm
+             * Returns '--:--.---' when the value is absent or non-positive.
+             */
+            function fmtTime(secs) {
+                if (!secs || secs <= 0) return "--:--.---";
+                const m = Math.floor(secs / 60);
+                const s = secs % 60;
+                const ss = Math.floor(s);
+                const ms = Math.round((s - ss) * 1000);
+                return `${m}:${String(ss).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
+            }
+
+            /** Minimal HTML entity escaping for user-controlled strings. */
+            function escHtml(s) {
+                return String(s)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;");
+            }
+
+            /**
+             * Produce a DOM-safe id fragment from an arbitrary player id string.
+             * Leaflet & querySelector are fine with hyphens/underscores.
+             */
+            function safeId(id) {
+                return String(id).replace(/[^a-zA-Z0-9_\-]/g, "_");
+            }
+
+            /** Set innerHTML of an element by id (no-op if element not found). */
+            function setHtml(elId, html) {
+                const el = document.getElementById(elId);
+                if (el) el.innerHTML = html;
+            }
+
+            /** Set width% of a bar-fill element. Clamped to [0, 100]. */
+            function setBarPct(elId, pct) {
+                const el = document.getElementById(elId);
+                if (el)
+                    el.style.width = `${Math.max(0, Math.min(100, pct)).toFixed(1)}%`;
+            }
+
+            /* ═══════════════════════════════════════════════════════════════════
+             MAP MARKER  – SVG arrow pointing north, rotated by yaw
+             ═══════════════════════════════════════════════════════════════════ */
+
+            /**
+             * Create a Leaflet divIcon containing a player name label above a
+             * north-pointing SVG arrow, rotated clockwise by headingDeg.
+             *
+             * Layout (fixed 80 px wide container):
+             *   [  pm-label  ]   ← ~16 px tall + 2 px margin
+             *   [  28×28 SVG ]   ← arrow centred
+             *
+             * iconAnchor = [40, 32] pins the SVG centre to the geo position:
+             *   x: 80/2  = 40
+             *   y: 16+2+14 = 32
+             */
+            function makeArrowIcon(color, label, headingDeg) {
+                const sz = 28;
+                // Normalise heading to avoid accumulating huge rotation values.
+                const deg = ((headingDeg % 360) + 360) % 360;
+                const html =
+                    `<div class="pm-wrap">` +
+                    `<div class="pm-label">${escHtml(label)}</div>` +
+                    `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24">` +
+                    `<path transform="rotate(${deg.toFixed(2)},12,12)" ` +
+                    `d="M12 2 L20 21 L12 16 L4 21 Z" ` +
+                    `fill="${color}" stroke="#000" ` +
+                    `stroke-width="1.5" stroke-linejoin="round"/>` +
+                    `</svg>` +
+                    `</div>`;
+                return L.divIcon({
+                    className: "player-arrow-icon",
+                    html,
+                    iconSize: [80, sz + 18],
+                    iconAnchor: [40, 32],
+                });
+            }
+
+            /* ═══════════════════════════════════════════════════════════════════
+             CARD DOM  – create once per player, then patch individual elements
+             ═══════════════════════════════════════════════════════════════════ */
+
+            /**
+             * Build and return the HTML element for a new player card.
+             * All value-holding elements carry predictable ids derived from
+             * the player's safe id so updateCard() can target them cheaply.
+             */
+            function createCard(id, label, color) {
+                const sid = safeId(id);
+                const card = document.createElement("div");
+                card.className = "player-card";
+                card.id = `card-${sid}`;
+                // Coloured left border accent
+                card.style.borderLeftColor = color;
+
+                card.innerHTML = `
+              <div class="card-header">
+                <div class="card-label-row">
+                <span class="color-dot" style="background:${color}"></span>
+                <span class="player-name">${escHtml(label)}</span>
+                <span class="car-info" id="car-info-${sid}"></span>
+                </div>
+                <span class="race-pos-badge" id="rpos-${sid}" style="display:none"></span>
+              </div>
+
+              <div class="speed-gear-row">
+                <span class="speed-val" id="speed-${sid}">
+                  <span class="speed-num">—</span><span class="speed-unit">mph</span>
+                </span>
+                <span class="gear-box" id="gear-${sid}">—</span>
+              </div>
+
+              <div class="bar-row">
+                <span class="bar-row-label">RPM</span>
+                <div class="bar-track">
+                  <div class="bar-fill" id="rpm-fill-${sid}" style="width:0%;background:${color}"></div>
+                </div>
+                <span class="bar-row-end" id="rpm-val-${sid}">0</span>
+              </div>
+
+              <div class="pedals-section">
+                <div class="pedal-row">
+                  <span class="pedal-lbl t-lbl">T</span>
+                  <div class="bar-track">
+                    <div class="bar-fill t-fill" id="t-fill-${sid}" style="width:0%"></div>
+                  </div>
+                  <span class="pedal-pct" id="t-pct-${sid}">0%</span>
+                </div>
+                <div class="pedal-row">
+                  <span class="pedal-lbl b-lbl">B</span>
+                  <div class="bar-track">
+                    <div class="bar-fill b-fill" id="b-fill-${sid}" style="width:0%"></div>
+                  </div>
+                  <span class="pedal-pct" id="b-pct-${sid}">0%</span>
+                </div>
+                <div class="pedal-row">
+                  <span class="pedal-lbl c-lbl">C</span>
+                  <div class="bar-track">
+                    <div class="bar-fill c-fill" id="c-fill-${sid}" style="width:0%"></div>
+                  </div>
+                  <span class="pedal-pct" id="c-pct-${sid}">0%</span>
+                </div>
+              </div>
+
+              <div class="tire-grid">
+                <div class="tire-cell" id="tfl-${sid}">
+                  <span class="tire-pos">FL</span><span class="tire-temp-val">—°</span>
+                </div>
+                <div class="tire-cell" id="tfr-${sid}">
+                  <span class="tire-pos">FR</span><span class="tire-temp-val">—°</span>
+                </div>
+                <div class="tire-cell" id="trl-${sid}">
+                  <span class="tire-pos">RL</span><span class="tire-temp-val">—°</span>
+                </div>
+                <div class="tire-cell" id="trr-${sid}">
+                  <span class="tire-pos">RR</span><span class="tire-temp-val">—°</span>
+                </div>
+              </div>
+
+              <div class="lap-row">
+                <span class="lap-num">Lap <span id="lapn-${sid}">—</span></span>
+                <span class="lap-cur" id="lapc-${sid}">--:--.---</span>
+                <span class="lap-best">Best <span id="lapb-${sid}">--:--.---</span></span>
+              </div>
+
+              <div class="offline-overlay" id="offline-${sid}">OFFLINE</div>
+            `;
+
+                return card;
+            }
+
+            /**
+             * Patch every value-holding element in an existing player card to
+             * reflect the latest telemetry packet.  Called on every update.
+             *
+             * All arithmetic is kept local so the function is self-contained;
+             * no shared mutable state outside the player object.
+             */
+            function updateCard(player) {
+                const { packet: p, color } = player;
+                if (!p) return;
+                const sid = safeId(player.id);
+
+                /* Speed + Gear */
+                const speedMph = Math.round(p.speedMs * 2.23694);
+                const speedEl = document.getElementById(`speed-${sid}`);
+                if (speedEl) {
+                    speedEl.innerHTML = `<span class="speed-num">${speedMph}</span><span class="speed-unit">mph</span>`;
+                }
+                const gearStr =
+                    p.gear === 0 ? "R" : p.gear === 11 ? "N" : String(p.gear);
+                setHtml(`gear-${sid}`, gearStr);
+
+                /* RPM bar — colour shifts through player colour → amber → red near limit */
+                const rpmPct =
+                    p.engineMaxRpm > 0
+                        ? Math.min(
+                              100,
+                              (p.currentEngineRpm / p.engineMaxRpm) * 100,
+                          )
+                        : 0;
+                const rpmFill = document.getElementById(`rpm-fill-${sid}`);
+                if (rpmFill) {
+                    rpmFill.style.width = `${rpmPct.toFixed(1)}%`;
+                    rpmFill.style.background =
+                        rpmPct > 90
+                            ? "#ef4444"
+                            : rpmPct > 78
+                              ? "#f59e0b"
+                              : color;
+                }
+                setHtml(
+                    `rpm-val-${sid}`,
+                    Math.round(p.currentEngineRpm).toLocaleString(),
+                );
+
+                /* Pedals – raw 0-255 values → 0-100% */
+                const tPct = Math.round((p.throttle / 255) * 100);
+                const bPct = Math.round((p.brake / 255) * 100);
+                const cPct = Math.round((p.clutch / 255) * 100);
+                setBarPct(`t-fill-${sid}`, tPct);
+                setBarPct(`b-fill-${sid}`, bPct);
+                setBarPct(`c-fill-${sid}`, cPct);
+                setHtml(`t-pct-${sid}`, `${tPct}%`);
+                setHtml(`b-pct-${sid}`, `${bPct}%`);
+                setHtml(`c-pct-${sid}`, `${cPct}%`);
+
+                /* Tyre temperatures */
+                updateTireCell(`tfl-${sid}`, "FL", p.tireTempFl);
+                updateTireCell(`tfr-${sid}`, "FR", p.tireTempFr);
+                updateTireCell(`trl-${sid}`, "RL", p.tireTempRl);
+                updateTireCell(`trr-${sid}`, "RR", p.tireTempRr);
+
+                /* Lap info */
+                const lapNum = p.lapNumber > 0 ? String(p.lapNumber) : "—";
+                setHtml(`lapn-${sid}`, lapNum);
+                setHtml(`lapc-${sid}`, fmtTime(p.currentLap));
+                setHtml(`lapb-${sid}`, fmtTime(p.bestLap));
+
+                /* Car name (ordinal lookup) or class+PI fallback */
+                const carName =
+                    typeof CAR_NAMES !== "undefined" && CAR_NAMES[p.carOrdinal];
+                if (carName) {
+                    setHtml(`car-info-${sid}`, escHtml(carName));
+                } else {
+                    const cls = CAR_CLASSES[p.carClass] ?? "?";
+                    setHtml(`car-info-${sid}`, `${cls}\u00b7${p.carPi}`);
+                }
+
+                /* Race position badge (hide when 0) */
+                const rposEl = document.getElementById(`rpos-${sid}`);
+                if (rposEl) {
+                    if (p.racePosition > 0) {
+                        rposEl.textContent = `P${p.racePosition}`;
+                        rposEl.style.display = "";
+                    } else {
+                        rposEl.style.display = "none";
+                    }
+                }
+            }
+
+            /**
+             * Style a single tyre cell with temperature-appropriate background/border.
+             */
+            function updateTireCell(elId, pos, temp) {
+                const el = document.getElementById(elId);
+                if (!el) return;
+                const col = tireTempColor(temp);
+                // Use the colour at ~20% opacity as background tint
+                el.style.background = col + "28";
+                el.style.borderColor = col + "80";
+                el.style.color = col;
+                el.innerHTML =
+                    `<span class="tire-pos">${pos}</span>` +
+                    `<span class="tire-temp-val">${Math.round(temp)}°</span>`;
+            }
+
+            /* ═══════════════════════════════════════════════════════════════════
+             PLAYER STATE MANAGEMENT
+             ═══════════════════════════════════════════════════════════════════
+
+             Each player entry:
+               id          – string identifier from server
+               label       – display name
+               color       – CSS colour string (from server)
+               packet      – latest TelemetryPacket | null
+               online      – true while active
+               polyline    – L.Polyline for the driven trace
+               marker      – L.Marker for the current position arrow
+               tracePoints – L.LatLng[] accumulated route points
+               cardEl      – HTMLElement card in #cards-panel
+             ═══════════════════════════════════════════════════════════════════ */
+
+            /** @type {Map<string, object>} */
+            const players = new Map();
+
+            /** FH6 car class index → display label. */
+            const CAR_CLASSES = ["D", "C", "B", "A", "S1", "S2", "R"];
+
+            /**
+             * Allocate map layers, DOM card, and bookkeeping for a brand-new player.
+             */
+            function createPlayer(id, label, color) {
+                const polyline = L.polyline([], {
+                    color,
+                    weight: 3,
+                    opacity: 0.9,
+                    lineJoin: "round",
+                    lineCap: "round",
+                }).addTo(traceGroup);
+
+                // Marker starts at 0,0 — will be repositioned on first packet.
+                const marker = L.marker([0, 0], {
+                    icon: makeArrowIcon(color, label, 0),
+                    interactive: false,
+                    zIndexOffset: 1000,
+                });
+                // Don't add to map yet; wait for a valid position.
+
+                const cardEl = createCard(id, label, color);
+
+                // Remove the "waiting" placeholder on first real player.
+                const empty = document.getElementById("empty-state");
+                if (empty) empty.remove();
+
+                document.getElementById("cards-panel").appendChild(cardEl);
+
+                return {
+                    id,
+                    label,
+                    color,
+                    packet: null,
+                    online: true,
+                    polyline,
+                    marker,
+                    tracePoints: [],
+                    cardEl,
+                    markerOnMap: false,
+                };
+            }
+
+            /**
+             * Apply a new packet to an existing player: update the trace, move the
+             * arrow marker, and refresh the card.
+             */
+            function applyPacket(player, packet) {
+                player.packet = packet;
+
+                const { positionX, positionZ, yaw } = packet;
+
+                if (positionX !== 0 || positionZ !== 0) {
+                    const latlng = worldToLatLng(positionX, positionZ);
+                    const headingDeg = (yaw * 180) / Math.PI;
+
+                    /* ── Trace ── */
+                    player.tracePoints.push(latlng);
+                    if (player.tracePoints.length > MAX_TRACE_PTS) {
+                        // Remove oldest chunk to stay within budget.
+                        player.tracePoints.splice(0, 100);
+                        player.polyline.setLatLngs(player.tracePoints);
+                    } else {
+                        player.polyline.addLatLng(latlng);
+                    }
+
+                    /* ── Arrow marker ── */
+                    if (!player.markerOnMap) {
+                        player.marker.addTo(markerGroup);
+                        player.markerOnMap = true;
+                    }
+                    player.marker.setLatLng(latlng);
+                    player.marker.setIcon(
+                        makeArrowIcon(player.color, player.label, headingDeg),
+                    );
+                }
+
+                updateCard(player);
+            }
+
+            /** Show the OFFLINE overlay on the player's card. */
+            function markPlayerOffline(player) {
+                player.online = false;
+                const ov = document.getElementById(
+                    `offline-${safeId(player.id)}`,
+                );
+                if (ov) ov.style.display = "flex";
+            }
+
+            /* ═══════════════════════════════════════════════════════════════════
+             WEBSOCKET  &  MESSAGE HANDLING
+             ═══════════════════════════════════════════════════════════════════
+
+             Expected message shapes
+             ────────────────────────
+             State (sent once on connect, initialises all live players):
+               { "type": "state",
+                 "players": [ { "id": "…", "label": "…", "color": "#…",
+                                "packet": { …TelemetryPacket camelCase… } } ] }
+
+             Update (one player's latest telemetry frame):
+               { "type": "update",
+                 "id": "…", "label": "…", "color": "#…",
+                 "packet": { …TelemetryPacket camelCase… } }
+
+             Player left:
+               { "type": "player_left", "id": "…" }
+             ═══════════════════════════════════════════════════════════════════ */
+
+            let ws = null;
+            let reconnectTimer = null;
+
+            function connect() {
+                if (ws) return;
+                setConnStatus("reconnecting", "● CONNECTING…");
+
+                ws = new WebSocket(`ws://${location.host}/ws`);
+
+                ws.addEventListener("open", () => {
+                    setConnStatus("connected", "● CONNECTED");
+                    clearTimeout(reconnectTimer);
+                    reconnectTimer = null;
+                });
+
+                ws.addEventListener("close", () => {
+                    setConnStatus("disconnected", "● DISCONNECTED");
+                    ws = null;
+                    reconnectTimer = setTimeout(connect, 3000);
+                });
+
+                ws.addEventListener("error", () => {
+                    // 'close' fires right after, which handles reconnect.
+                    ws && ws.close();
+                });
+
+                ws.addEventListener("message", (evt) => {
+                    let msg;
+                    try {
+                        msg = JSON.parse(evt.data);
+                    } catch {
+                        return;
+                    }
+                    handleMessage(msg);
+                });
+            }
+
+            function handleMessage(msg) {
+                switch (msg.type) {
+                    case "state": {
+                        // players is a dict {ip: {id, label, color, active, packet}}
+                        const dict =
+                            msg.players && typeof msg.players === "object"
+                                ? msg.players
+                                : {};
+                        for (const entry of Object.values(dict)) {
+                            upsertPlayer(entry);
+                        }
+                        break;
+                    }
+                    case "update": {
+                        // {type, player_id, packet, trace} — normalise to upsertPlayer shape
+                        upsertPlayer({
+                            id: msg.player_id,
+                            packet: msg.packet,
+                            trace: msg.trace,
+                        });
+                        break;
+                    }
+                    case "player_left": {
+                        const player = players.get(String(msg.player_id));
+                        if (player) markPlayerOffline(player);
+                        break;
+                    }
+                    default:
+                        // Unknown message type – silently ignore.
+                        break;
+                }
+            }
+
+            /**
+             * Create a player if not yet seen, or update an existing one.
+             * Accepts the shape used by both 'state' array entries and 'update'.
+             */
+            function upsertPlayer({ id, label, color, packet, trace }) {
+                id = String(id);
+
+                let player = players.get(id);
+                if (!player) {
+                    // Fall back to sensible defaults if the server omits fields.
+                    const resolvedColor = color || "#3b82f6";
+                    const resolvedLabel = label || id;
+                    player = createPlayer(id, resolvedLabel, resolvedColor);
+                    players.set(id, player);
+                }
+
+                // A player that reconnects should clear the OFFLINE overlay.
+                if (!player.online) {
+                    player.online = true;
+                    const ov = document.getElementById(`offline-${safeId(id)}`);
+                    if (ov) ov.style.display = "none";
+                }
+
+                if (packet) {
+                    applyPacket(player, packet, trace);
+                }
+            }
+
+            /* ── Connection indicator ─────────────────────────────────────────── */
+
+            function setConnStatus(cssClass, text) {
+                const el = document.getElementById("conn-status");
+                if (!el) return;
+                el.textContent = text;
+                el.className = `conn-status ${cssClass}`;
+            }
+
+            /* ── Bootstrap ────────────────────────────────────────────────────── */
+            connect();
+        </script>
+    </body>
+</html>

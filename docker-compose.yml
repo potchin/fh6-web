@@ -1,0 +1,9 @@
+services:
+  fh6-web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "20440:20440/udp"
+    environment:
+      UDP_PORT: "20440"
