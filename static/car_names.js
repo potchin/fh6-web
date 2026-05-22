@@ -807,4 +807,5 @@ const CAR_NAMES = {
   3767: "2022 Acura NSX Type S",
   4208: "2015 Honda Indy '25",
   4209: "2015 Chevy Indy '25",
+  569: "2005 Honda NSX-R GT",
 };
