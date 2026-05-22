@@ -4,7 +4,7 @@ Multi-user Forza Horizon 6 telemetry dashboard, accessible from any browser on y
 
 Receives UDP telemetry from one or more players simultaneously, identifies each by source IP, and streams live data to all connected browsers over WebSocket. No install required on the viewer — just open a URL.
 
-![Dashboard showing map with player arrows and telemetry cards](docs/screenshot-placeholder.png)
+![Dashboard showing map with player arrows and telemetry cards](screenshot.png)
 
 ## Features
 
