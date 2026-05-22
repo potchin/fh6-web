@@ -4,7 +4,8 @@ Multi-user Forza Horizon 6 telemetry dashboard, accessible from any browser on y
 
 Receives UDP telemetry from one or more players simultaneously, identifies each by source IP, and streams live data to all connected browsers over WebSocket. No install required on the viewer — just open a URL.
 
-![Dashboard showing map with player arrows and telemetry cards](screenshot.png)
+![desktop](screenshot.png)
+![mobile](pwa-screenshot.png)
 
 ## Features
 
@@ -12,6 +13,7 @@ Receives UDP telemetry from one or more players simultaneously, identifies each 
 - **Per-player cards** — speed, gear, RPM bar, throttle/brake/clutch bars, tyre temps (with cold/optimal/hot colour coding), lap times and race position
 - **Multi-player** — up to 8 players simultaneously, each assigned a distinct colour; players time out after 30 s of silence and show an OFFLINE overlay
 - **Any browser** — pure HTML/CSS/JS frontend, no framework, no build step; works on desktop, phone, or tablet
+- **PWA** - install as a PWA app on mobile devices (needs to be behind a HTTPS proxy)
 - **Docker** — single container, no host dependencies
 
 ## Quick start
@@ -31,7 +33,6 @@ In FH6 go to **Settings → HUD and Gameplay → DATA OUT** and set:
 | Data Out | On |
 | Data Out IP Address | LAN IP of the machine running this container |
 | Data Out IP Port | `20440` (or your custom `UDP_PORT`) |
-| Data Out Packet Format | **Car Dash** |
 
 Each player points their game at the same server IP. The server identifies players by their source IP address.
 
