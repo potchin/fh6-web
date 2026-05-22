@@ -36,13 +36,11 @@ docker compose up -d --build
 
 # View logs
 docker logs fh6-web -f
-
-# Hot-patch frontend without rebuild
-docker cp static/index.html fh6-web:/app/static/index.html
-
-# Hot-patch server (needs restart to take effect)
-docker cp server.py fh6-web:/app/server.py && docker compose restart
 ```
+
+**Always rebuild the image after making changes** (`docker compose up -d --build`).
+Do not `docker cp` files into a running container — changes will be lost on the
+next rebuild and can mask real issues.
 
 Do **not** install Python packages on the host directly. Use the container.
 
