@@ -2,6 +2,9 @@ services:
   fh6-web:
     build: .
     restart: unless-stopped
+    # optional but allows the container to see the
+    # real hostnames (which are used as player names)
+    network_mode: host
     ports:
       - "8080:8080"
       - "20440:20440/udp"
