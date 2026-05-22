@@ -2,8 +2,22 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+        />
         <title>FH6 Dashboard</title>
+        <!-- PWA -->
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#030712" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+            name="apple-mobile-web-app-status-bar-style"
+            content="black-translucent"
+        />
+        <meta name="apple-mobile-web-app-title" content="FH6" />
+        <link rel="apple-touch-icon" href="/icons/icon.svg" />
         <link
             rel="stylesheet"
             href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -98,12 +112,76 @@
                 overflow: hidden;
             }
 
+            /* ── Resizer handle ──────────────────────────────────────────────────── */
+            #resizer {
+                flex-shrink: 0;
+                background: var(--bd);
+                position: relative;
+                z-index: 100;
+                transition: background 0.15s;
+                /* prevent scroll on touch while dragging */
+                touch-action: none;
+            }
+            /* Drag-indicator pip */
+            #resizer::after {
+                content: "";
+                position: absolute;
+                background: var(--tx-xdim);
+                border-radius: 2px;
+                transition: background 0.15s;
+            }
+            #resizer:hover,
+            #resizer.dragging {
+                background: var(--bg-elevated);
+            }
+            #resizer:hover::after,
+            #resizer.dragging::after {
+                background: var(--ac);
+            }
+            /* Horizontal (row) split – desktop / landscape */
+            #main-layout.split-row > #resizer {
+                width: 5px;
+                height: 100%;
+                cursor: col-resize;
+            }
+            #main-layout.split-row > #resizer::after {
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 2px;
+                height: 48px;
+            }
+            /* Vertical (column) split – portrait mobile */
+            #main-layout.split-col {
+                flex-direction: column;
+            }
+            #main-layout.split-col > #resizer {
+                width: 100%;
+                height: 5px;
+                cursor: row-resize;
+            }
+            #main-layout.split-col > #resizer::after {
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                height: 2px;
+                width: 48px;
+            }
+
             /* ── Map panel ───────────────────────────────────────────────────────── */
             #map-panel {
-                flex: 0 0 65%;
+                flex: 0 0 65%; /* overridden by JS resizer once loaded */
                 position: relative;
                 background: var(--bg-panel);
+                min-width: 0;
+                min-height: 0;
+            }
+            /* Separator border follows split direction */
+            #main-layout.split-row > #map-panel {
                 border-right: 1px solid var(--bd);
+            }
+            #main-layout.split-col > #map-panel {
+                border-bottom: 1px solid var(--bd);
             }
 
             #map {
@@ -113,7 +191,7 @@
 
             /* ── Cards panel ─────────────────────────────────────────────────────── */
             #cards-panel {
-                flex: 0 0 35%;
+                flex: 0 0 35%; /* overridden by JS resizer once loaded */
                 overflow-y: auto;
                 overflow-x: hidden;
                 background: var(--bg);
@@ -122,6 +200,7 @@
                 flex-direction: column;
                 gap: 8px;
                 min-height: 0;
+                min-width: 0;
             }
             #cards-panel::-webkit-scrollbar {
                 width: 5px;
@@ -519,10 +598,11 @@
         </header>
 
         <!-- ── Main layout ────────────────────────────────────────────── -->
-        <div id="main-layout">
+        <div id="main-layout" class="split-row">
             <div id="map-panel">
                 <div id="map"></div>
             </div>
+            <div id="resizer" aria-hidden="true"></div>
             <div id="cards-panel">
                 <p id="empty-state">Waiting for players…</p>
             </div>
@@ -1394,6 +1474,125 @@
                 if (!el) return;
                 el.textContent = text;
                 el.className = `conn-status ${cssClass}`;
+            }
+
+            /* ═══════════════════════════════════════════════════════════════════
+             PANEL RESIZER
+             Drag #resizer to adjust the map / cards split.
+             Direction: left-right on landscape/desktop, top-bottom on portrait.
+             The split percentage is persisted in localStorage.
+             ═══════════════════════════════════════════════════════════════════ */
+            (function initResizer() {
+                const resizer = document.getElementById("resizer");
+                const mapPanel = document.getElementById("map-panel");
+                const cardsPanel = document.getElementById("cards-panel");
+                const layout = document.getElementById("main-layout");
+
+                function isRow() {
+                    return layout.classList.contains("split-row");
+                }
+
+                function applyPct(pct) {
+                    mapPanel.style.flex = `0 0 ${pct.toFixed(2)}%`;
+                    cardsPanel.style.flex = `0 0 ${(100 - pct).toFixed(2)}%`;
+                }
+
+                function currentPct() {
+                    const m = (mapPanel.style.flex || "").match(
+                        /0 0 ([0-9.]+)%/,
+                    );
+                    return m ? parseFloat(m[1]) : isRow() ? 65 : 55;
+                }
+
+                function restoreSplit() {
+                    const key = isRow() ? "fh6.split.row" : "fh6.split.col";
+                    const def = isRow() ? 65 : 55;
+                    const saved = parseFloat(localStorage.getItem(key));
+                    applyPct(saved >= 10 && saved <= 90 ? saved : def);
+                }
+
+                function applyOrientation() {
+                    const row =
+                        window.innerWidth >= window.innerHeight ||
+                        window.innerWidth >= 640;
+                    layout.classList.toggle("split-row", row);
+                    layout.classList.toggle("split-col", !row);
+                    restoreSplit();
+                    map.invalidateSize();
+                }
+
+                let dragging = false,
+                    startPos = 0,
+                    startPct = 0;
+
+                function eventPos(e) {
+                    const src = e.touches?.[0] ?? e.changedTouches?.[0] ?? e;
+                    return isRow() ? src.clientX : src.clientY;
+                }
+
+                function onStart(e) {
+                    dragging = true;
+                    startPos = eventPos(e);
+                    startPct = currentPct();
+                    resizer.classList.add("dragging");
+                    document.body.style.userSelect = "none";
+                    document.body.style.cursor = isRow()
+                        ? "col-resize"
+                        : "row-resize";
+                    e.preventDefault();
+                }
+
+                function onMove(e) {
+                    if (!dragging) return;
+                    const totalPx = isRow()
+                        ? layout.getBoundingClientRect().width
+                        : layout.getBoundingClientRect().height;
+                    if (!totalPx) return;
+                    const newPct = Math.max(
+                        10,
+                        Math.min(
+                            90,
+                            startPct +
+                                ((eventPos(e) - startPos) / totalPx) * 100,
+                        ),
+                    );
+                    applyPct(newPct);
+                    map.invalidateSize();
+                }
+
+                function onEnd() {
+                    if (!dragging) return;
+                    dragging = false;
+                    resizer.classList.remove("dragging");
+                    document.body.style.userSelect = "";
+                    document.body.style.cursor = "";
+                    const key = isRow() ? "fh6.split.row" : "fh6.split.col";
+                    localStorage.setItem(key, currentPct().toFixed(2));
+                    map.invalidateSize();
+                }
+
+                resizer.addEventListener("mousedown", onStart);
+                document.addEventListener("mousemove", onMove);
+                document.addEventListener("mouseup", onEnd);
+                resizer.addEventListener("touchstart", onStart, {
+                    passive: false,
+                });
+                document.addEventListener("touchmove", onMove, {
+                    passive: false,
+                });
+                document.addEventListener("touchend", onEnd);
+
+                window.addEventListener("resize", applyOrientation);
+                applyOrientation();
+            })();
+
+            /* ── Service Worker registration ──────────────────────────────────────── */
+            if ("serviceWorker" in navigator) {
+                navigator.serviceWorker
+                    .register("/sw.js")
+                    .catch((err) =>
+                        console.warn("[SW] registration failed:", err),
+                    );
             }
 
             /* ── Bootstrap ────────────────────────────────────────────────────── */

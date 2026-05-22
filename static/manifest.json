@@ -1,0 +1,19 @@
+{
+  "name": "FH6 Dashboard",
+  "short_name": "FH6",
+  "description": "Live telemetry dashboard for Forza Horizon 6",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#030712",
+  "orientation": "any",
+  "categories": ["games", "sports"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
