@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>FH6 Multi Telemetry</title>
+        <title>FH6 Dashboard</title>
         <link
             rel="stylesheet"
             href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -171,10 +171,24 @@
                 min-width: 0;
             }
             .color-dot {
-                width: 9px;
-                height: 9px;
+                width: 11px;
+                height: 11px;
                 border-radius: 50%;
                 flex-shrink: 0;
+                cursor: pointer;
+                box-shadow: 0 0 0 0 transparent;
+                transition: box-shadow 0.15s;
+            }
+            .color-dot:hover {
+                box-shadow: 0 0 0 3px
+                    color-mix(in srgb, var(--dot-color) 45%, transparent);
+            }
+            /* stack name + car line vertically inside the label row */
+            .card-identity {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                min-width: 0;
             }
             .player-name {
                 font-weight: 700;
@@ -184,14 +198,73 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                cursor: pointer;
+                border-bottom: 1px dashed transparent;
+                transition:
+                    color 0.15s,
+                    border-color 0.15s;
             }
-            .car-info {
+            .player-name:hover {
+                color: var(--ac);
+                border-bottom-color: var(--ac);
+            }
+            .player-name-input {
+                background: var(--bg-elevated);
+                border: 1px solid var(--ac);
+                border-radius: 3px;
+                color: var(--tx);
+                font-weight: 700;
+                font-size: 13px;
+                letter-spacing: 0.03em;
+                padding: 0 4px;
+                width: 100%;
+                outline: none;
+                font-family: inherit;
+            }
+            .car-line {
+                display: flex;
+                align-items: baseline;
+                gap: 5px;
+                min-width: 0;
+            }
+            /* ── Car class badge (Forza-style coloured box + PI) ── */
+            .car-class-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                flex-shrink: 0;
+            }
+            .car-class-letter {
+                display: inline-block;
+                color: #fff;
                 font-size: 10px;
-                font-weight: 600;
-                color: var(--tx-xdim);
-                white-space: nowrap;
+                font-weight: 900;
+                font-family: "Segoe UI", system-ui, sans-serif;
                 letter-spacing: 0.04em;
-                margin-left: 4px;
+                padding: 1px 6px 2px;
+                border-radius: 2px;
+                min-width: 20px;
+                text-align: center;
+                line-height: 1.4;
+            }
+            .car-pi-val {
+                font-family: "Courier New", monospace;
+                font-size: 11px;
+                font-weight: 700;
+                color: var(--tx);
+                letter-spacing: 0.02em;
+            }
+            .car-detail {
+                font-size: 10px;
+                color: var(--tx-dim);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .car-ordinal {
+                color: var(--tx-xdim);
+                font-family: "Courier New", monospace;
+                font-size: 9px;
             }
             .race-pos-badge {
                 font-size: 9px;
@@ -439,7 +512,7 @@
     <body>
         <!-- ── Header ─────────────────────────────────────────────────── -->
         <header id="header">
-            <span class="header-title">FH6 <span>Multi</span> Telemetry</span>
+            <span class="header-title">FH6 <span>Dashboard</span></span>
             <span class="conn-status disconnected" id="conn-status"
                 >● DISCONNECTED</span
             >
@@ -665,9 +738,14 @@
                 card.innerHTML = `
               <div class="card-header">
                 <div class="card-label-row">
-                <span class="color-dot" style="background:${color}"></span>
-                <span class="player-name">${escHtml(label)}</span>
-                <span class="car-info" id="car-info-${sid}"></span>
+                <span class="color-dot" style="background:${color};--dot-color:${color}" title="Center on map" data-center-player="${escHtml(id)}"></span>
+                <div class="card-identity">
+                  <span class="player-name" id="pname-${sid}" title="Click to rename" data-player-id="${escHtml(id)}">${escHtml(label)}</span>
+                  <div class="car-line">
+                    <span class="car-class-badge" id="car-class-${sid}">—</span>
+                    <span class="car-detail" id="car-detail-${sid}"></span>
+                  </div>
+                </div>
                 </div>
                 <span class="race-pos-badge" id="rpos-${sid}" style="display:none"></span>
               </div>
@@ -806,14 +884,25 @@
                 setHtml(`lapc-${sid}`, fmtTime(p.currentLap));
                 setHtml(`lapb-${sid}`, fmtTime(p.bestLap));
 
-                /* Car name (ordinal lookup) or class+PI fallback */
+                /* Car class badge – always shown, Forza-style */
+                const cls = CAR_CLASSES[p.carClass] ?? "?";
+                const clsColor = CAR_CLASS_COLORS[p.carClass] ?? "#6b7280";
+                setHtml(
+                    `car-class-${sid}`,
+                    `<span class="car-class-letter" style="background:${clsColor}">${cls}</span>` +
+                        `<span class="car-pi-val">${p.carPi}</span>`,
+                );
+
+                /* Car name or debug ordinal */
                 const carName =
                     typeof CAR_NAMES !== "undefined" && CAR_NAMES[p.carOrdinal];
                 if (carName) {
-                    setHtml(`car-info-${sid}`, escHtml(carName));
+                    setHtml(`car-detail-${sid}`, escHtml(carName));
                 } else {
-                    const cls = CAR_CLASSES[p.carClass] ?? "?";
-                    setHtml(`car-info-${sid}`, `${cls}\u00b7${p.carPi}`);
+                    setHtml(
+                        `car-detail-${sid}`,
+                        `<span class="car-ordinal">#${p.carOrdinal}</span>`,
+                    );
                 }
 
                 /* Race position badge (hide when 0) */
@@ -866,9 +955,223 @@
             /** FH6 car class index → display label. */
             const CAR_CLASSES = ["D", "C", "B", "A", "S1", "S2", "R"];
 
+            /** Forza-style background colours for each class (matches in-game PI badges). */
+            const CAR_CLASS_COLORS = [
+                "#6b7280", // D – grey
+                "#ca8a04", // C – gold
+                "#16a34a", // B – green
+                "#2563eb", // A – blue
+                "#7c3aed", // S1 – purple
+                "#db2777", // S2 – pink
+                "#dc2626", // R  – red
+            ];
+
             /**
              * Allocate map layers, DOM card, and bookkeeping for a brand-new player.
              */
+            /* ═══════════════════════════════════════════════════════════════════
+             PLAYER RENAME  – persisted in localStorage, no server involvement
+             ═══════════════════════════════════════════════════════════════════ */
+
+            function lsKey(id) {
+                return `fh6.name.${id}`;
+            }
+
+            /** Return the user-set display name for a player, or null if none. */
+            function customName(id) {
+                return localStorage.getItem(lsKey(id)) || null;
+            }
+
+            /** Resolve the label to show: custom name beats server-provided label. */
+            function displayLabel(id, serverLabel) {
+                return customName(id) || serverLabel || id;
+            }
+
+            /**
+             * Persist a new name, update the card DOM and the map marker label.
+             * Pass an empty string to clear the override and revert to the server label.
+             */
+            function renamePlayer(id, newName) {
+                console.log("[rename] renamePlayer called", { id, newName });
+                const player = players.get(id);
+                if (!player) {
+                    console.warn("[rename] player not found", id);
+                    return;
+                }
+
+                const trimmed = newName.trim();
+                if (trimmed) {
+                    localStorage.setItem(lsKey(id), trimmed);
+                    player.displayName = trimmed;
+                } else {
+                    localStorage.removeItem(lsKey(id));
+                    player.displayName = player.label;
+                }
+
+                // Restore / update the name element (may currently be an <input> during edit)
+                const sid = safeId(id);
+                const nameEl = document.getElementById(`pname-${sid}`);
+                console.log(
+                    "[rename] nameEl found:",
+                    nameEl,
+                    "tag:",
+                    nameEl?.tagName,
+                );
+                if (nameEl) {
+                    if (nameEl.tagName === "INPUT") {
+                        // Replace the input with a fresh span
+                        const span = document.createElement("span");
+                        span.className = "player-name";
+                        span.id = `pname-${sid}`;
+                        span.title = "Click to rename";
+                        span.setAttribute("data-player-id", id);
+                        span.textContent = player.displayName;
+                        nameEl.replaceWith(span);
+                        console.log("[rename] input replaced with span");
+                    } else {
+                        nameEl.textContent = player.displayName;
+                        console.log("[rename] span textContent updated");
+                    }
+                } else {
+                    console.warn(
+                        "[rename] pname element not found for sid:",
+                        sid,
+                    );
+                }
+
+                // Keep the map marker in sync
+                if (player.packet && player.markerOnMap) {
+                    const { yaw } = player.packet;
+                    player.marker.setIcon(
+                        makeArrowIcon(
+                            player.color,
+                            player.displayName,
+                            (yaw * 180) / Math.PI,
+                        ),
+                    );
+                }
+            }
+
+            /**
+             * Swap the player-name span for an <input>, focus it, and wire
+             * blur/Enter/Escape to commit or cancel.
+             */
+            function beginRename(id) {
+                console.log("[rename] beginRename called", id);
+                const player = players.get(id);
+                if (!player) {
+                    console.warn("[rename] player not found", id);
+                    return;
+                }
+                const sid = safeId(id);
+                const nameEl = document.getElementById(`pname-${sid}`);
+                console.log(
+                    "[rename] nameEl:",
+                    nameEl,
+                    "tag:",
+                    nameEl?.tagName,
+                );
+                if (!nameEl || nameEl.tagName === "INPUT") return; // already editing
+
+                const input = document.createElement("input");
+                input.type = "text";
+                input.id = `pname-${sid}`; // keep same id so renamePlayer can find it
+                input.className = "player-name-input";
+                input.value = player.displayName;
+                input.setAttribute("data-player-id", id);
+
+                nameEl.replaceWith(input);
+                input.focus();
+                input.select();
+                console.log(
+                    "[rename] input shown, active element:",
+                    document.activeElement?.tagName,
+                );
+
+                function commit() {
+                    console.log("[rename] commit fired, value:", input.value);
+                    renamePlayer(id, input.value);
+                }
+                function cancel() {
+                    console.log("[rename] cancel fired");
+                    const span = document.createElement("span");
+                    span.className = "player-name";
+                    span.id = `pname-${sid}`;
+                    span.title = "Click to rename";
+                    span.setAttribute("data-player-id", id);
+                    span.textContent = player.displayName;
+                    input.replaceWith(span);
+                }
+
+                input.addEventListener(
+                    "blur",
+                    (e) => {
+                        console.log(
+                            "[rename] blur fired, relatedTarget:",
+                            e.relatedTarget,
+                        );
+                        commit();
+                    },
+                    { once: true },
+                );
+                input.addEventListener("keydown", (e) => {
+                    console.log("[rename] keydown:", e.key);
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        input.blur();
+                    } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        input.removeEventListener("blur", commit);
+                        cancel();
+                    }
+                });
+            }
+
+            function centerOnPlayer(id) {
+                console.log("[center] centerOnPlayer called", id);
+                const player = players.get(id);
+                console.log(
+                    "[center] player:",
+                    player,
+                    "markerOnMap:",
+                    player?.markerOnMap,
+                );
+                if (!player || !player.markerOnMap) {
+                    console.warn(
+                        "[center] skipped – player missing or no marker",
+                    );
+                    return;
+                }
+                map.panTo(player.marker.getLatLng(), {
+                    animate: true,
+                    duration: 0.4,
+                });
+            }
+
+            // Single delegated listener – handles clicks on any .player-name span or color dot.
+            document
+                .getElementById("cards-panel")
+                .addEventListener("click", (e) => {
+                    console.log(
+                        "[click] cards-panel click, target:",
+                        e.target,
+                        "classes:",
+                        e.target.className,
+                    );
+                    const nameTarget = e.target.closest(
+                        ".player-name[data-player-id]",
+                    );
+                    console.log("[click] nameTarget:", nameTarget);
+                    if (nameTarget) {
+                        beginRename(nameTarget.dataset.playerId);
+                        return;
+                    }
+                    const dotTarget = e.target.closest("[data-center-player]");
+                    console.log("[click] dotTarget:", dotTarget);
+                    if (dotTarget)
+                        centerOnPlayer(dotTarget.dataset.centerPlayer);
+                });
+
             function createPlayer(id, label, color) {
                 const polyline = L.polyline([], {
                     color,
@@ -894,9 +1197,12 @@
 
                 document.getElementById("cards-panel").appendChild(cardEl);
 
+                const resolved = displayLabel(id, label);
+
                 return {
                     id,
-                    label,
+                    label, // server-provided label (IP)
+                    displayName: resolved, // what we actually show
                     color,
                     packet: null,
                     online: true,
@@ -938,7 +1244,11 @@
                     }
                     player.marker.setLatLng(latlng);
                     player.marker.setIcon(
-                        makeArrowIcon(player.color, player.label, headingDeg),
+                        makeArrowIcon(
+                            player.color,
+                            player.displayName,
+                            headingDeg,
+                        ),
                     );
                 }
 
@@ -1057,6 +1367,11 @@
                     const resolvedColor = color || "#3b82f6";
                     const resolvedLabel = label || id;
                     player = createPlayer(id, resolvedLabel, resolvedColor);
+                    // Patch the card name element to show the resolved display name
+                    // (createCard receives label, but displayName may differ via localStorage)
+                    const sid = safeId(id);
+                    const nameEl = document.getElementById(`pname-${sid}`);
+                    if (nameEl) nameEl.textContent = player.displayName;
                     players.set(id, player);
                 }
 
