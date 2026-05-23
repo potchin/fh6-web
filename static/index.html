@@ -640,6 +640,7 @@
                 display: flex;
                 flex-direction: column;
                 gap: 7px;
+                min-width: 0; /* prevent card expanding beyond its flex container */
             }
 
             /* header row: name + race position badge */
@@ -708,12 +709,12 @@
                             );
                 }
             }
-            /* stack name + car line vertically inside the label row */
-            .card-identity {
+            /* right side of header: class badge + race position */
+            .card-hdr-right {
                 display: flex;
-                flex-direction: column;
-                gap: 2px;
-                min-width: 0;
+                align-items: center;
+                gap: 5px;
+                flex-shrink: 0;
             }
             .player-name {
                 font-weight: 700;
@@ -723,6 +724,7 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                min-width: 0;
                 cursor: pointer;
                 border-bottom: 1px dashed transparent;
                 transition:
@@ -745,12 +747,6 @@
                 width: 100%;
                 outline: none;
                 font-family: inherit;
-            }
-            .car-line {
-                display: flex;
-                align-items: baseline;
-                gap: 5px;
-                min-width: 0;
             }
             /* ── Car class badge (Forza-style coloured box + PI) ── */
             .car-class-badge {
@@ -815,24 +811,39 @@
                 padding: 1px 6px;
                 border-radius: 3px;
             }
-            .player-card[data-in-menu] .speed-gear-row,
+            .player-card[data-in-menu] .card-mid,
             .player-card[data-in-menu] .bar-row,
-            .player-card[data-in-menu] .pedals-section,
-            .player-card[data-in-menu] .tire-grid,
+            .player-card[data-in-menu] .tire-row,
             .player-card[data-in-menu] .lap-row {
                 opacity: 0.2;
                 pointer-events: none;
             }
 
-            /* speed + gear row */
-            .speed-gear-row {
+            /* mid row: speed+gear (left) | pedals (right) */
+            .card-mid {
+                display: flex;
+                align-items: center;
+                min-width: 0;
+            }
+            .card-speed-gear {
                 display: flex;
                 align-items: baseline;
-                justify-content: space-between;
+                gap: 5px;
+                flex-shrink: 0;
+                padding-right: 8px;
+            }
+            .card-pedals {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+                padding-left: 8px;
+                border-left: 1px solid var(--bd);
+                min-width: 0;
             }
             .speed-val {
                 font-family: "Courier New", Courier, monospace;
-                font-size: 26px;
+                font-size: 22px;
                 font-weight: 700;
                 font-variant-numeric: tabular-nums;
                 color: var(--tx);
@@ -845,16 +856,16 @@
             }
             .gear-box {
                 font-family: "Courier New", Courier, monospace;
-                font-size: 22px;
+                font-size: 20px;
                 font-weight: 700;
                 font-variant-numeric: tabular-nums;
                 color: var(--tx-dim);
                 background: var(--bg-elevated);
                 border: 1px solid var(--bd);
-                padding: 2px 10px;
+                padding: 2px 7px;
                 border-radius: 5px;
                 line-height: 1.3;
-                min-width: 44px;
+                min-width: 38px;
                 text-align: center;
             }
 
@@ -894,11 +905,6 @@
             }
 
             /* pedal rows */
-            .pedals-section {
-                display: flex;
-                flex-direction: column;
-                gap: 3px;
-            }
             .pedal-row {
                 display: flex;
                 align-items: center;
@@ -942,17 +948,21 @@
                 flex-shrink: 0;
             }
 
-            /* tire 2×2 grid */
-            .tire-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 4px;
+            /* tire row: all 4 in one line */
+            .tire-row {
+                display: flex;
+                gap: 3px;
+                min-width: 0;
+            }
+            .tire-row .tire-cell {
+                flex: 1;
+                min-width: 0;
             }
             .tire-cell {
                 background: var(--bg-elevated);
                 border: 1px solid var(--bd);
                 border-radius: 5px;
-                padding: 4px 7px;
+                padding: 3px 5px;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -969,7 +979,7 @@
             }
             .tire-temp-val {
                 font-family: "Courier New", monospace;
-                font-size: 13px;
+                font-size: 11px;
                 font-weight: 700;
                 font-variant-numeric: tabular-nums;
             }
@@ -1018,19 +1028,43 @@
             /* ── Leaflet overrides ───────────────────────────────────────────────── */
             /* ── Narrow-card responsive fixes (container query) ─────────────────── */
             @container cards (max-width: 200px) {
-                .player-card {
-                    padding: 7px 8px 7px 9px;
+                /* stack the mid-row vertically on very narrow panels */
+                .card-mid {
+                    flex-direction: column;
+                    align-items: stretch;
+                    gap: 5px;
+                }
+                .card-speed-gear {
+                    padding-right: 0;
+                }
+                .card-pedals {
+                    border-left: none;
+                    border-top: 1px solid var(--bd);
+                    padding-left: 0;
+                    padding-top: 5px;
+                }
+                /* tire row falls back to 2×2 grid */
+                .tire-row {
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 3px;
+                }
+                .tire-row .tire-cell {
+                    flex: unset;
                 }
                 .speed-val {
-                    font-size: 20px;
+                    font-size: 18px;
                 }
                 .gear-box {
-                    font-size: 18px;
-                    min-width: 36px;
-                    padding: 2px 7px;
+                    font-size: 17px;
+                    min-width: 32px;
+                    padding: 2px 5px;
                 }
-                .tire-temp-val {
-                    font-size: 11px;
+                .bar-row-label {
+                    width: 24px;
+                }
+                .bar-row-end {
+                    width: 32px;
                 }
                 .lap-row {
                     flex-wrap: wrap;
@@ -1453,70 +1487,52 @@
                 card.innerHTML = `
               <div class="card-header">
                 <div class="card-label-row">
-                <span class="color-dot" style="background:${color};--dot-color:${color}" title="Center on map · Double-click to follow" data-center-player="${escHtml(id)}"></span>
-                <div class="card-identity">
+                  <span class="color-dot" style="background:${color};--dot-color:${color}" title="Center on map · Double-click to follow" data-center-player="${escHtml(id)}"></span>
                   <span class="player-name" id="pname-${sid}" title="Click to rename" data-player-id="${escHtml(id)}">${escHtml(label)}</span>
-                  <div class="car-line">
-                    <span class="car-class-badge" id="car-class-${sid}">—</span>
-                    <span class="car-detail" id="car-detail-${sid}"></span>
-                  </div>
                 </div>
+                <div class="card-hdr-right">
+                  <span class="car-class-badge" id="car-class-${sid}">—</span>
+                  <span class="race-pos-badge" id="rpos-${sid}" style="display:none"></span>
                 </div>
-                <span class="race-pos-badge" id="rpos-${sid}" style="display:none"></span>
               </div>
 
-              <div class="speed-gear-row">
-                <span class="speed-val" id="speed-${sid}">
-                  <span class="speed-num">—</span><span class="speed-unit">mph</span>
-                </span>
-                <span class="gear-box" id="gear-${sid}">—</span>
+              <span class="car-detail" id="car-detail-${sid}"></span>
+
+              <div class="card-mid">
+                <div class="card-speed-gear">
+                  <span class="speed-val" id="speed-${sid}"><span class="speed-num">—</span><span class="speed-unit">mph</span></span>
+                  <span class="gear-box" id="gear-${sid}">—</span>
+                </div>
+                <div class="card-pedals">
+                  <div class="pedal-row">
+                    <span class="pedal-lbl t-lbl">T</span>
+                    <div class="bar-track"><div class="bar-fill t-fill" id="t-fill-${sid}" style="width:0%"></div></div>
+                    <span class="pedal-pct" id="t-pct-${sid}">0%</span>
+                  </div>
+                  <div class="pedal-row">
+                    <span class="pedal-lbl b-lbl">B</span>
+                    <div class="bar-track"><div class="bar-fill b-fill" id="b-fill-${sid}" style="width:0%"></div></div>
+                    <span class="pedal-pct" id="b-pct-${sid}">0%</span>
+                  </div>
+                  <div class="pedal-row">
+                    <span class="pedal-lbl c-lbl">C</span>
+                    <div class="bar-track"><div class="bar-fill c-fill" id="c-fill-${sid}" style="width:0%"></div></div>
+                    <span class="pedal-pct" id="c-pct-${sid}">0%</span>
+                  </div>
+                </div>
               </div>
 
               <div class="bar-row">
                 <span class="bar-row-label">RPM</span>
-                <div class="bar-track">
-                  <div class="bar-fill" id="rpm-fill-${sid}" style="width:0%;background:${color}"></div>
-                </div>
+                <div class="bar-track"><div class="bar-fill" id="rpm-fill-${sid}" style="width:0%;background:${color}"></div></div>
                 <span class="bar-row-end" id="rpm-val-${sid}">0</span>
               </div>
 
-              <div class="pedals-section">
-                <div class="pedal-row">
-                  <span class="pedal-lbl t-lbl">T</span>
-                  <div class="bar-track">
-                    <div class="bar-fill t-fill" id="t-fill-${sid}" style="width:0%"></div>
-                  </div>
-                  <span class="pedal-pct" id="t-pct-${sid}">0%</span>
-                </div>
-                <div class="pedal-row">
-                  <span class="pedal-lbl b-lbl">B</span>
-                  <div class="bar-track">
-                    <div class="bar-fill b-fill" id="b-fill-${sid}" style="width:0%"></div>
-                  </div>
-                  <span class="pedal-pct" id="b-pct-${sid}">0%</span>
-                </div>
-                <div class="pedal-row">
-                  <span class="pedal-lbl c-lbl">C</span>
-                  <div class="bar-track">
-                    <div class="bar-fill c-fill" id="c-fill-${sid}" style="width:0%"></div>
-                  </div>
-                  <span class="pedal-pct" id="c-pct-${sid}">0%</span>
-                </div>
-              </div>
-
-              <div class="tire-grid">
-                <div class="tire-cell" id="tfl-${sid}">
-                  <span class="tire-pos">FL</span><span class="tire-temp-val">—°</span>
-                </div>
-                <div class="tire-cell" id="tfr-${sid}">
-                  <span class="tire-pos">FR</span><span class="tire-temp-val">—°</span>
-                </div>
-                <div class="tire-cell" id="trl-${sid}">
-                  <span class="tire-pos">RL</span><span class="tire-temp-val">—°</span>
-                </div>
-                <div class="tire-cell" id="trr-${sid}">
-                  <span class="tire-pos">RR</span><span class="tire-temp-val">—°</span>
-                </div>
+              <div class="tire-row">
+                <div class="tire-cell" id="tfl-${sid}"><span class="tire-pos">FL</span><span class="tire-temp-val">—°</span></div>
+                <div class="tire-cell" id="tfr-${sid}"><span class="tire-pos">FR</span><span class="tire-temp-val">—°</span></div>
+                <div class="tire-cell" id="trl-${sid}"><span class="tire-pos">RL</span><span class="tire-temp-val">—°</span></div>
+                <div class="tire-cell" id="trr-${sid}"><span class="tire-pos">RR</span><span class="tire-temp-val">—°</span></div>
               </div>
 
               <div class="lap-row">
