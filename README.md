@@ -2,9 +2,9 @@
 
 Multi-user Forza Horizon 6 telemetry dashboard, accessible from any browser on your local network.
 
-Receives UDP telemetry from one or more players simultaneously, identifies each by source IP, and streams live data to all connected browsers over WebSocket. No install required on the viewer — just open a URL.
+Receives UDP telemetry from one or more players and streams live data to all connected browsers over WebSocket. No install required on the viewer — just open a URL.
 
-Full disclosure: this is mostly vibecoded. It's designed to be a self-hosted private instance handling local data. I've put it together for fun and to mess around with. Props to [fh6-tel](https://github.com/TheBanHammer/fh6-tel) by BanHammer for the original idea.
+**Full disclosure**: this is mostly vibecoded. It's designed to be a self-hosted private instance handling local data. I've put it together for fun and to mess around with. Props to [fh6-tel](https://github.com/TheBanHammer/fh6-tel) by BanHammer for the original idea. I will accept requests and PRs but its fairly simple and can be edited with something like Claude code fairly easily (I've been using Sonnet 4.6). If you've used it then just give the repo a star - it's cool to know when people like something you've worked on.
 
 ## Screenshots
 
@@ -14,14 +14,18 @@ Full disclosure: this is mostly vibecoded. It's designed to be a self-hosted pri
 ### Mobile (PWA)
 ![mobile](pwa-screenshot.png)
 
+Dash view:
+![dash](pwa-dash-screenshot.png)
+
 ## Features
 
-- **Live map** — Leaflet map with the FH6 Japan tile set, showing all players as directional arrows with colour-coded driven traces
+- **Live map** — Map with the FH6 Japan tile set, showing all players as directional arrows with colour-coded driven traces
 - **Per-player cards** — speed, gear, RPM bar, throttle/brake/clutch bars, tyre temps (with cold/optimal/hot colour coding), lap times and race position
+- **Dashboard** — A more focussed tab just showing car and lap information.
 - **Multi-player** — up to 8 players simultaneously, each assigned a distinct colour; players time out after 30 s of silence and show an OFFLINE overlay
 - **Any browser** — pure HTML/CSS/JS frontend, no framework, no build step; works on desktop, phone, or tablet
 - **PWA** - install as a PWA app on mobile devices (needs to be behind a HTTPS proxy)
-- **Docker** — single container, no host dependencies
+- **Docker** — single stateless container, no host dependencies or storage requirements
 
 ## Quick start
 
@@ -38,7 +42,7 @@ In FH6 go to **Settings → HUD and Gameplay → DATA OUT** and set:
 | Setting | Value |
 |---|---|
 | Data Out | On |
-| Data Out IP Address | LAN IP of the machine running this container |
+| Data Out IP Address | LAN IP of the machine running the container |
 | Data Out IP Port | `20440` (or your custom `UDP_PORT`) |
 
 Each player points their game at the same server IP. The server identifies players by their source IP address.
@@ -140,25 +144,6 @@ CAL_A_WORLD = [-119.49154, 3888.595],  CAL_A_PIX = [2089486, 2087415]
 CAL_B_WORLD = [-7104.7695, -1863.08],  CAL_B_PIX = [2086885, 2089556]
 ```
 
-## Development
-
-To iterate without rebuilding the image, copy changed files directly into the running container:
-
-```bash
-# Frontend changes (instant)
-docker cp static/index.html fh6-web:/app/static/index.html
-
-# Server changes (requires restart)
-docker cp server.py fh6-web:/app/server.py
-docker compose restart
-```
-
-To rebuild from scratch:
-
-```bash
-docker compose down
-docker compose up -d --build
-```
 
 ## File structure
 
